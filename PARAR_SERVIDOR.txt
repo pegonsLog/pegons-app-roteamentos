@@ -1,0 +1,67 @@
+========================================
+  COMO PARAR O SERVIDOR DE DESENVOLVIMENTO
+========================================
+
+MÉTODO 1: No Terminal onde o servidor está rodando
+---------------------------------------------------
+Pressione: Ctrl + C
+
+Isso interrompe o processo do servidor imediatamente.
+
+
+MÉTODO 2: Encontrar e matar o processo manualmente
+---------------------------------------------------
+1. Encontre o processo:
+   lsof -ti:4200
+
+2. Mate o processo:
+   kill -9 $(lsof -ti:4200)
+
+Ou em um único comando:
+   kill -9 $(lsof -ti:4200)
+
+
+MÉTODO 3: Matar todos os processos Node
+---------------------------------------------------
+⚠️ CUIDADO: Isso mata TODOS os processos Node rodando!
+
+   pkill -9 node
+
+
+MÉTODO 4: Usando o Process ID específico
+---------------------------------------------------
+Se você sabe o PID do processo (ex: 16499):
+
+   kill -9 16499
+
+
+VERIFICAR SE O SERVIDOR ESTÁ RODANDO
+---------------------------------------------------
+Para verificar se há algo rodando na porta 4200:
+
+   lsof -i:4200
+
+Se retornar algo, o servidor está rodando.
+Se não retornar nada, a porta está livre.
+
+
+COMANDOS ÚTEIS
+---------------------------------------------------
+# Ver todos os processos Node rodando:
+ps aux | grep node
+
+# Ver processos usando a porta 4200:
+lsof -i:4200
+
+# Matar processo específico:
+kill -9 [PID]
+
+
+NOTAS
+---------------------------------------------------
+- O servidor Angular normalmente roda na porta 4200
+- Ctrl + C é o método mais seguro e recomendado
+- Use kill -9 apenas se Ctrl + C não funcionar
+- Sempre verifique se o processo foi encerrado depois
+
+========================================

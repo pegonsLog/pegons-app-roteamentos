@@ -1,0 +1,24 @@
+# Garante que arquivos sensíveis nunca sejam commitados
+src/environments/environment.ts filter=git-crypt diff=git-crypt
+src/environments/environment.prod.ts filter=git-crypt diff=git-crypt
+
+# Normalização de line endings
+* text=auto
+*.ts text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.sh text eol=lf
+
+# Arquivos binários
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
