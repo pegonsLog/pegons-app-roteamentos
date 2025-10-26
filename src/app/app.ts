@@ -2,7 +2,6 @@ import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
 import { GoogleGeocodeService } from './services/google-geocode.service';
 import { AddressWithCoordinates, ExcelRow } from './models/address.model';
 
@@ -192,9 +191,18 @@ export class App {
     const csvOutput = XLSX.write(workbook, { bookType: 'csv', type: 'array' });
     const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });
     
-    // Faz o download
+    // Faz o download usando API nativa do navegador
     const timestamp = new Date().toISOString().split('T')[0];
-    saveAs(blob, `enderecos_geocodificados_${timestamp}.csv`);
+    const fileName = `enderecos_geocodificados_${timestamp}.csv`;
+    
+    // Cria um link temporário e simula o clique
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = fileName;
+    link.click();
+    
+    // Limpa o objeto URL após o download
+    URL.revokeObjectURL(link.href);
     
     this.successMessage.set('Arquivo CSV exportado com sucesso!');
   }

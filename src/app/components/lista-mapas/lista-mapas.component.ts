@@ -22,13 +22,13 @@ export class ListaMapasComponent implements OnInit {
   isEditMode = signal(false);
   mapaEditandoId = signal<string | null>(null);
   
-  // Formulário
-  formData = signal<MapaFormData>({
+  // Formulário (não usar signal para compatibilidade com ngModel)
+  formData: MapaFormData = {
     nomeMapa: '',
     urlMapa: '',
     empresaCliente: '',
     empresaCotante: ''
-  });
+  };
 
   constructor(private mapaService: MapaService) {}
 
@@ -55,12 +55,12 @@ export class ListaMapasComponent implements OnInit {
       // Modo edição
       this.isEditMode.set(true);
       this.mapaEditandoId.set(mapa.id || null);
-      this.formData.set({
+      this.formData = {
         nomeMapa: mapa.nomeMapa,
         urlMapa: mapa.urlMapa,
         empresaCliente: mapa.empresaCliente,
         empresaCotante: mapa.empresaCotante
-      });
+      };
     } else {
       // Modo criação
       this.isEditMode.set(false);
@@ -76,16 +76,16 @@ export class ListaMapasComponent implements OnInit {
   }
 
   resetForm(): void {
-    this.formData.set({
+    this.formData = {
       nomeMapa: '',
       urlMapa: '',
       empresaCliente: '',
       empresaCotante: ''
-    });
+    };
   }
 
   async salvarMapa(): Promise<void> {
-    const form = this.formData();
+    const form = this.formData;
     
     // Validação básica
     if (!form.nomeMapa || !form.urlMapa || !form.empresaCliente || !form.empresaCotante) {
