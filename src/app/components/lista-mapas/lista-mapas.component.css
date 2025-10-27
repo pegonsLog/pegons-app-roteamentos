@@ -14,3 +14,42 @@
 .text-truncate {
   max-width: 100%;
 }
+
+/* Estilos de Drag and Drop */
+.draggable-card {
+  cursor: move;
+  user-select: none;
+}
+
+.draggable-card.dragging {
+  opacity: 0.4;
+  transform: scale(0.95);
+  cursor: grabbing;
+}
+
+.draggable-card.drag-over {
+  border: 2px dashed #0d6efd;
+  background-color: rgba(13, 110, 253, 0.05);
+  transform: scale(1.02);
+}
+
+.draggable-card:active {
+  cursor: grabbing;
+}
+
+/* Ícone de arrastar no card */
+.draggable-card::before {
+  content: '⋮⋮';
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 16px;
+  color: #ccc;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.draggable-card:hover::before {
+  opacity: 1;
+}

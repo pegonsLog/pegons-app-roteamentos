@@ -130,7 +130,9 @@ export class App {
       const address = addresses[i];
       
       try {
-        const coords = await this.geocodeService.geocodeAddressAsync(address.endereco);
+        // Melhora o formato do endereço adicionando Brasil se não tiver
+        const formattedAddress = this.formatAddress(address.endereco);
+        const coords = await this.geocodeService.geocodeAddressAsync(formattedAddress);
         
         addresses[i] = {
           ...address,
@@ -163,6 +165,25 @@ export class App {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
+  private formatAddress(address: string): string {
+    // Remove espaços extras
+    let formatted = address.trim().replace(/\s+/g, ' ');
+    
+    // Se não contém "Brasil" ou "Brazil", adiciona ", MG, Brasil"
+    const hasBrasil = /brasil|brazil/i.test(formatted);
+    const hasEstado = /\b(MG|Minas Gerais)\b/i.test(formatted);
+    
+    if (!hasBrasil) {
+      if (!hasEstado) {
+        formatted += ', MG, Brasil';
+      } else {
+        formatted += ', Brasil';
+      }
+    }
+    
+    return formatted;
+  }
+
   exportToCSV(): void {
     const addresses = this.addresses();
     
@@ -171,15 +192,22 @@ export class App {
       return;
     }
 
+    // Filtra apenas endereços geocodificados com sucesso
+    const successAddresses = addresses.filter(addr => addr.status === 'success');
+    
+    if (successAddresses.length === 0) {
+      this.errorMessage.set('Não há endereços geocodificados com sucesso para exportar.');
+      return;
+    }
+
     // Prepara os dados para exportação
-    const exportData = addresses.map(addr => ({
+    const exportData = successAddresses.map(addr => ({
       nome: addr.nome,
       endereco: addr.endereco,
       turno: addr.turno,
       latitude: addr.latitude ?? 'N/A',
       longitude: addr.longitude ?? 'N/A',
-      status: addr.status === 'success' ? 'Sucesso' : addr.status === 'error' ? 'Erro' : 'Pendente',
-      erro: addr.errorMessage ?? ''
+      status: 'Sucesso'
     }));
 
     // Cria a planilha
@@ -205,6 +233,91 @@ export class App {
     URL.revokeObjectURL(link.href);
     
     this.successMessage.set('Arquivo CSV exportado com sucesso!');
+  }
+
+  exportToCSVByShift(): void {
+    const addresses = this.addresses();
+    
+    if (addresses.length === 0) {
+      this.errorMessage.set('Não há dados para exportar.');
+      return;
+    }
+
+    // Filtra apenas endereços geocodificados com sucesso
+    const successAddresses = addresses.filter(addr => addr.status === 'success');
+    
+    if (successAddresses.length === 0) {
+      this.errorMessage.set('Não há endereços geocodificados com sucesso para exportar.');
+      return;
+    }
+
+    // Agrupa os endereços por turno
+    const addressesByShift = new Map<string, AddressWithCoordinates[]>();
+    
+    successAddresses.forEach(addr => {
+      const turno = addr.turno || 'Sem Turno';
+      if (!addressesByShift.has(turno)) {
+        addressesByShift.set(turno, []);
+      }
+      addressesByShift.get(turno)!.push(addr);
+    });
+
+    // Gera um arquivo CSV para cada turno
+    const timestamp = new Date().toISOString().split('T')[0];
+    let exportedCount = 0;
+
+    addressesByShift.forEach((shiftAddresses, turno) => {
+      // Prepara os dados para exportação
+      const exportData = shiftAddresses.map(addr => ({
+        nome: addr.nome,
+        endereco: addr.endereco,
+        turno: addr.turno,
+        latitude: addr.latitude ?? 'N/A',
+        longitude: addr.longitude ?? 'N/A',
+        status: 'Sucesso'
+      }));
+
+      // Cria a planilha
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, `Turno ${turno}`);
+
+      // Gera o arquivo CSV
+      const csvOutput = XLSX.write(workbook, { bookType: 'csv', type: 'array' });
+      const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });
+      
+      // Normaliza o nome do turno para usar no nome do arquivo
+      const turnoNormalizado = turno.toString().replace(/[^a-zA-Z0-9]/g, '_');
+      const fileName = `enderecos_turno_${turnoNormalizado}_${timestamp}.csv`;
+      
+      // Cria um link temporário e simula o clique
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = fileName;
+      link.click();
+      
+      // Limpa o objeto URL após o download
+      URL.revokeObjectURL(link.href);
+      
+      exportedCount++;
+    });
+    
+    this.successMessage.set(`${exportedCount} arquivo(s) CSV exportado(s) com sucesso (um por turno)!`);
+  }
+
+  getUniqueTurnos(): string[] {
+    const addresses = this.addresses();
+    const turnos = new Set<string>();
+    
+    addresses
+      .filter(addr => addr.status === 'success')
+      .forEach(addr => {
+        if (addr.turno) {
+          turnos.add(addr.turno);
+        }
+      });
+    
+    return Array.from(turnos).sort();
   }
 
   clearData(): void {

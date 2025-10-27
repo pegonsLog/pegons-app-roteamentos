@@ -47,25 +47,32 @@
         </div>
       </div>
     } @else {
+      <!-- Dica de Drag and Drop -->
+      @if (mapas().length > 1) {
+        <div class="alert alert-info mb-3">
+          <i class="bi bi-info-circle me-2"></i>
+          <strong>Dica:</strong> Arraste e solte os cards para reordenar seus mapas.
+        </div>
+      }
+      
       <div class="row g-3">
-        @for (mapa of mapas(); track mapa.id) {
+        @for (mapa of mapas(); track mapa.id; let i = $index) {
           <div class="col-md-6 col-lg-4">
-            <div class="card shadow-sm h-100">
+            <div 
+              class="card shadow-sm h-100 draggable-card"
+              [class.dragging]="isDragging(i)"
+              [class.drag-over]="isDragOver(i)"
+              draggable="true"
+              (dragstart)="onDragStart($event, i)"
+              (dragover)="onDragOver($event, i)"
+              (dragleave)="onDragLeave($event)"
+              (drop)="onDrop($event, i)"
+              (dragend)="onDragEnd()"
+              [attr.title]="'Arraste para reordenar'">
               <div class="card-body">
                 <h5 class="card-title text-primary">
                   <i class="bi bi-geo-alt-fill me-2"></i>{{ mapa.nomeMapa }}
                 </h5>
-                
-                <div class="mb-2">
-                  <small class="text-muted d-block">
-                    <i class="bi bi-building me-1"></i>
-                    <strong>Cliente:</strong> {{ mapa.empresaCliente }}
-                  </small>
-                  <small class="text-muted d-block">
-                    <i class="bi bi-briefcase me-1"></i>
-                    <strong>Cotante:</strong> {{ mapa.empresaCotante }}
-                  </small>
-                </div>
 
                 <div class="mb-3">
                   <small class="text-muted d-block text-truncate">
@@ -152,30 +159,6 @@
                 placeholder="https://www.google.com/maps/d/..."
                 required>
               <div class="form-text">Cole a URL do Google My Maps</div>
-            </div>
-
-            <div class="mb-3">
-              <label for="empresaCliente" class="form-label">Empresa Cliente *</label>
-              <input 
-                type="text" 
-                class="form-control" 
-                id="empresaCliente"
-                [(ngModel)]="formData.empresaCliente"
-                name="empresaCliente"
-                placeholder="Ex: Empresa ABC Ltda"
-                required>
-            </div>
-
-            <div class="mb-3">
-              <label for="empresaCotante" class="form-label">Empresa Cotante *</label>
-              <input 
-                type="text" 
-                class="form-control" 
-                id="empresaCotante"
-                [(ngModel)]="formData.empresaCotante"
-                name="empresaCotante"
-                placeholder="Ex: Transportadora XYZ"
-                required>
             </div>
           </form>
         </div>

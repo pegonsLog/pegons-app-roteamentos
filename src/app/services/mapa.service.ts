@@ -36,10 +36,16 @@ export class MapaService {
 
   // Adicionar novo mapa
   async adicionarMapa(mapaData: MapaFormData): Promise<DocumentReference> {
+    // Obtém o número atual de mapas para definir a ordem
+    const mapas = await new Promise<Mapa[]>((resolve) => {
+      this.getMapas().subscribe(mapas => resolve(mapas));
+    });
+    
     const novoMapa = {
       ...mapaData,
       dataCriacao: Timestamp.now(),
-      dataAtualizacao: Timestamp.now()
+      dataAtualizacao: Timestamp.now(),
+      ordem: mapas.length // Adiciona no final
     };
     return await addDoc(this.mapasCollection, novoMapa);
   }
@@ -52,6 +58,12 @@ export class MapaService {
       dataAtualizacao: Timestamp.now()
     };
     return await updateDoc(mapaDoc, dadosAtualizados);
+  }
+
+  // Atualizar apenas a ordem do mapa
+  async atualizarOrdem(id: string, ordem: number): Promise<void> {
+    const mapaDoc = doc(this.firestore, 'mapas', id);
+    return await updateDoc(mapaDoc, { ordem });
   }
 
   // Deletar mapa

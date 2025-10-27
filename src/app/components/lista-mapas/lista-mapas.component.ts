@@ -22,12 +22,14 @@ export class ListaMapasComponent implements OnInit {
   isEditMode = signal(false);
   mapaEditandoId = signal<string | null>(null);
   
+  // Controle de drag and drop
+  draggedIndex: number | null = null;
+  dragOverIndex: number | null = null;
+  
   // Formulário (não usar signal para compatibilidade com ngModel)
   formData: MapaFormData = {
     nomeMapa: '',
-    urlMapa: '',
-    empresaCliente: '',
-    empresaCotante: ''
+    urlMapa: ''
   };
 
   constructor(private mapaService: MapaService) {}
@@ -40,7 +42,9 @@ export class ListaMapasComponent implements OnInit {
     this.isLoading.set(true);
     this.mapaService.getMapas().subscribe({
       next: (mapas) => {
-        this.mapas.set(mapas);
+        // Ordena os mapas pela propriedade ordem
+        const mapasSorted = mapas.sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
+        this.mapas.set(mapasSorted);
         this.isLoading.set(false);
       },
       error: (error) => {
@@ -57,9 +61,7 @@ export class ListaMapasComponent implements OnInit {
       this.mapaEditandoId.set(mapa.id || null);
       this.formData = {
         nomeMapa: mapa.nomeMapa,
-        urlMapa: mapa.urlMapa,
-        empresaCliente: mapa.empresaCliente,
-        empresaCotante: mapa.empresaCotante
+        urlMapa: mapa.urlMapa
       };
     } else {
       // Modo criação
@@ -78,9 +80,7 @@ export class ListaMapasComponent implements OnInit {
   resetForm(): void {
     this.formData = {
       nomeMapa: '',
-      urlMapa: '',
-      empresaCliente: '',
-      empresaCotante: ''
+      urlMapa: ''
     };
   }
 
@@ -88,7 +88,7 @@ export class ListaMapasComponent implements OnInit {
     const form = this.formData;
     
     // Validação básica
-    if (!form.nomeMapa || !form.urlMapa || !form.empresaCliente || !form.empresaCotante) {
+    if (!form.nomeMapa || !form.urlMapa) {
       this.errorMessage.set('Todos os campos são obrigatórios');
       return;
     }
@@ -135,5 +135,88 @@ export class ListaMapasComponent implements OnInit {
 
   abrirMapa(url: string): void {
     this.mapaService.abrirMapa(url);
+  }
+
+  // Métodos de Drag and Drop
+  onDragStart(event: DragEvent, index: number): void {
+    this.draggedIndex = index;
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/html', index.toString());
+    }
+  }
+
+  onDragOver(event: DragEvent, index: number): void {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move';
+    }
+    this.dragOverIndex = index;
+  }
+
+  onDragLeave(event: DragEvent): void {
+    this.dragOverIndex = null;
+  }
+
+  onDrop(event: DragEvent, dropIndex: number): void {
+    event.preventDefault();
+    
+    if (this.draggedIndex === null || this.draggedIndex === dropIndex) {
+      this.draggedIndex = null;
+      this.dragOverIndex = null;
+      return;
+    }
+
+    const mapasArray = [...this.mapas()];
+    const draggedMapa = mapasArray[this.draggedIndex];
+    
+    // Remove o item da posição original
+    mapasArray.splice(this.draggedIndex, 1);
+    
+    // Insere na nova posição
+    mapasArray.splice(dropIndex, 0, draggedMapa);
+    
+    // Atualiza a ordem de todos os mapas
+    mapasArray.forEach((mapa, index) => {
+      mapa.ordem = index;
+    });
+    
+    // Atualiza o signal
+    this.mapas.set(mapasArray);
+    
+    // Salva a nova ordem no banco de dados
+    this.salvarOrdem(mapasArray);
+    
+    this.draggedIndex = null;
+    this.dragOverIndex = null;
+  }
+
+  onDragEnd(): void {
+    this.draggedIndex = null;
+    this.dragOverIndex = null;
+  }
+
+  isDragging(index: number): boolean {
+    return this.draggedIndex === index;
+  }
+
+  isDragOver(index: number): boolean {
+    return this.dragOverIndex === index && this.draggedIndex !== index;
+  }
+
+  async salvarOrdem(mapas: Mapa[]): Promise<void> {
+    try {
+      // Atualiza a ordem de cada mapa no banco de dados
+      const promises = mapas.map(mapa => 
+        this.mapaService.atualizarOrdem(mapa.id!, mapa.ordem!)
+      );
+      
+      await Promise.all(promises);
+      this.successMessage.set('Ordem dos mapas atualizada!');
+      setTimeout(() => this.successMessage.set(''), 2000);
+    } catch (error: any) {
+      this.errorMessage.set('Erro ao salvar ordem: ' + error.message);
+      this.carregarMapas(); // Recarrega para reverter a mudança visual
+    }
   }
 }
