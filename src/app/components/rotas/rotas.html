@@ -1,0 +1,437 @@
+<div class="container-fluid py-4">
+  <!-- Cabeçalho -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="mb-0">
+      <i class="bi bi-signpost-2 me-2"></i>Calcular Rotas
+    </h3>
+  </div>
+
+  <!-- Mensagens -->
+  @if (errorMessage()) {
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      {{ errorMessage() }}
+      <button type="button" class="btn-close" (click)="errorMessage.set('')"></button>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      <i class="bi bi-check-circle-fill me-2"></i>
+      {{ successMessage() }}
+      <button type="button" class="btn-close" (click)="successMessage.set('')"></button>
+    </div>
+  }
+
+  <div class="row">
+    <!-- Formulário -->
+    <div class="col-lg-4">
+      <div class="card shadow-sm mb-4">
+        <div class="card-body">
+          <h5 class="card-title mb-3">
+            <i class="bi bi-geo-alt me-2"></i>Configurar Rota
+          </h5>
+
+          <!-- Origem -->
+          <div class="mb-3">
+            <label for="origin" class="form-label">Origem *</label>
+            <div class="input-group">
+              <input 
+                type="text" 
+                class="form-control" 
+                [class.is-valid]="originValidation() === 'valid'"
+                [class.is-invalid]="originValidation() === 'invalid'"
+                id="origin"
+                [(ngModel)]="origin"
+                placeholder="Ex: Av. Paulista, 1000 - São Paulo, SP"
+                [disabled]="isLoading()"
+                (blur)="validateOrigin()">
+              @if (originValidation() === 'validating') {
+                <span class="input-group-text">
+                  <div class="spinner-border spinner-border-sm" role="status"></div>
+                </span>
+              }
+              @if (originValidation() === 'valid') {
+                <span class="input-group-text text-success">
+                  <i class="bi bi-check-circle-fill"></i>
+                </span>
+              }
+              @if (originValidation() === 'invalid') {
+                <span class="input-group-text text-danger">
+                  <i class="bi bi-x-circle-fill"></i>
+                </span>
+              }
+            </div>
+            @if (originValidationMessage()) {
+              <small class="form-text" 
+                [class.text-success]="originValidation() === 'valid'"
+                [class.text-danger]="originValidation() === 'invalid'">
+                {{ originValidationMessage() }}
+              </small>
+            }
+          </div>
+
+          <!-- Destino -->
+          <div class="mb-3">
+            <label for="destination" class="form-label">Destino *</label>
+            <div class="input-group">
+              <input 
+                type="text" 
+                class="form-control" 
+                [class.is-valid]="destinationValidation() === 'valid'"
+                [class.is-invalid]="destinationValidation() === 'invalid'"
+                id="destination"
+                [(ngModel)]="destination"
+                placeholder="Ex: Rua Augusta, 500 - São Paulo, SP"
+                [disabled]="isLoading()"
+                (blur)="validateDestination()">
+              @if (destinationValidation() === 'validating') {
+                <span class="input-group-text">
+                  <div class="spinner-border spinner-border-sm" role="status"></div>
+                </span>
+              }
+              @if (destinationValidation() === 'valid') {
+                <span class="input-group-text text-success">
+                  <i class="bi bi-check-circle-fill"></i>
+                </span>
+              }
+              @if (destinationValidation() === 'invalid') {
+                <span class="input-group-text text-danger">
+                  <i class="bi bi-x-circle-fill"></i>
+                </span>
+              }
+            </div>
+            @if (destinationValidationMessage()) {
+              <small class="form-text" 
+                [class.text-success]="destinationValidation() === 'valid'"
+                [class.text-danger]="destinationValidation() === 'invalid'">
+                {{ destinationValidationMessage() }}
+              </small>
+            }
+          </div>
+
+          <!-- Waypoints -->
+          <div class="mb-3">
+            <label class="form-label">
+              Pontos Intermediários
+              @if (waypoints().length > 0) {
+                <span class="badge bg-primary ms-2">{{ waypoints().length }}/25</span>
+              }
+            </label>
+            
+            @if (waypoints().length > 0) {
+              <div class="list-group mb-2">
+                @for (waypoint of waypoints(); track $index) {
+                  <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center flex-grow-1">
+                      <i class="bi bi-check-circle-fill text-success me-2"></i>
+                      <small class="text-truncate">{{ $index + 1 }}. {{ waypoint }}</small>
+                    </div>
+                    <button 
+                      class="btn btn-sm btn-outline-danger ms-2"
+                      (click)="removeWaypoint($index)"
+                      [disabled]="isLoading()">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+
+            <div class="input-group">
+              <input 
+                type="text" 
+                class="form-control" 
+                [(ngModel)]="newWaypoint"
+                placeholder="Adicionar ponto intermediário"
+                [disabled]="isLoading()"
+                (keyup.enter)="addWaypoint()">
+              <button 
+                class="btn btn-outline-primary" 
+                (click)="addWaypoint()"
+                [disabled]="isLoading() || !newWaypoint() || waypoints().length >= 25"
+                [title]="waypoints().length >= 25 ? 'Limite máximo de 25 pontos atingido' : 'Adicionar ponto intermediário'">
+                @if (isLoading() && newWaypoint()) {
+                  <span class="spinner-border spinner-border-sm"></span>
+                } @else {
+                  <i class="bi bi-plus-circle"></i>
+                }
+              </button>
+            </div>
+            @if (waypoints().length === 0) {
+              <small class="form-text text-muted">
+                <i class="bi bi-info-circle me-1"></i>
+                Digite um endereço e clique em + para adicionar. O endereço será validado automaticamente.
+              </small>
+            } @else if (waypoints().length < 25) {
+              <small class="form-text text-muted">
+                <i class="bi bi-info-circle me-1"></i>
+                {{ waypoints().length }} ponto(s) adicionado(s). Você pode adicionar até {{ 25 - waypoints().length }} mais.
+              </small>
+            }
+            
+            @if (waypoints().length >= 10) {
+              <div class="alert alert-warning mt-2 py-2 px-3 mb-0">
+                <small>
+                  <i class="bi bi-exclamation-triangle me-1"></i>
+                  <strong>Atenção:</strong> 
+                  @if (waypoints().length >= 25) {
+                    Limite máximo de 25 pontos atingido!
+                  } @else if (waypoints().length === 10) {
+                    A partir de 11 pontos, o custo dobra (SKU Pro: $10/1000 requisições)
+                  } @else {
+                    Usando SKU Pro (mais de 10 pontos) = custo dobrado
+                  }
+                </small>
+              </div>
+            }
+          </div>
+
+          <!-- Opções -->
+          <div class="mb-3">
+            <label class="form-label">Opções</label>
+            
+            <div class="form-check">
+              <input 
+                class="form-check-input" 
+                type="checkbox" 
+                id="showAlternatives"
+                [(ngModel)]="showAlternatives"
+                [disabled]="isLoading()">
+              <label class="form-check-label" for="showAlternatives">
+                Mostrar rotas alternativas
+              </label>
+            </div>
+
+            <div class="form-check">
+              <input 
+                class="form-check-input" 
+                type="checkbox" 
+                id="avoidTolls"
+                [(ngModel)]="avoidTolls"
+                [disabled]="isLoading()">
+              <label class="form-check-label" for="avoidTolls">
+                Evitar pedágios
+              </label>
+            </div>
+
+            <div class="form-check">
+              <input 
+                class="form-check-input" 
+                type="checkbox" 
+                id="avoidHighways"
+                [(ngModel)]="avoidHighways"
+                [disabled]="isLoading()">
+              <label class="form-check-label" for="avoidHighways">
+                Evitar rodovias
+              </label>
+            </div>
+
+            <div class="form-check">
+              <input 
+                class="form-check-input" 
+                type="checkbox" 
+                id="avoidFerries"
+                [(ngModel)]="avoidFerries"
+                [disabled]="isLoading()">
+              <label class="form-check-label" for="avoidFerries">
+                Evitar balsas
+              </label>
+            </div>
+          </div>
+
+          <!-- Botões -->
+          <div class="d-grid gap-2">
+            <button 
+              class="btn btn-primary" 
+              (click)="calculateRoute()"
+              [disabled]="isLoading() || !origin() || !destination()">
+              @if (isLoading()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+              }
+              <i class="bi bi-calculator me-2"></i>Calcular Rota
+            </button>
+            
+            <button 
+              class="btn btn-outline-secondary" 
+              (click)="clearForm()"
+              [disabled]="isLoading()">
+              <i class="bi bi-x-circle me-2"></i>Limpar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resultados -->
+    <div class="col-lg-8">
+      @if (routes().length > 0) {
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="card-title mb-0">
+                <i class="bi bi-map me-2"></i>Rotas Encontradas ({{ routes().length }})
+              </h5>
+              
+              @if (selectedRoute()) {
+                <div class="d-flex gap-2">
+                  <button 
+                    class="btn btn-success btn-sm"
+                    (click)="openInGoogleMaps()">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Abrir no Google Maps
+                  </button>
+                  
+                  <button 
+                    class="btn btn-outline-primary btn-sm"
+                    (click)="exportRouteAsKML()"
+                    title="Exportar como KML para Google My Maps">
+                    <i class="bi bi-map me-1"></i>KML
+                  </button>
+                  
+                  <button 
+                    class="btn btn-outline-secondary btn-sm"
+                    (click)="exportRoute()"
+                    title="Exportar como JSON">
+                    <i class="bi bi-file-earmark-code me-1"></i>JSON
+                  </button>
+                </div>
+              }
+            </div>
+
+            <!-- Lista de Rotas -->
+            <div class="row">
+              @for (route of routes(); track $index) {
+                <div class="col-md-6 mb-3">
+                  <div 
+                    class="card route-card"
+                    [class.selected]="selectedRoute() === route"
+                    (click)="selectRoute(route)">
+                    <div class="card-body">
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="mb-0">
+                          @if (routes().length > 1) {
+                            Rota {{ $index + 1 }}
+                          } @else {
+                            Rota Principal
+                          }
+                        </h6>
+                        @if (selectedRoute() === route) {
+                          <span class="badge bg-primary">Selecionada</span>
+                        }
+                      </div>
+
+                      <div class="route-info">
+                        <div class="d-flex align-items-center mb-2">
+                          <i class="bi bi-clock text-primary me-2"></i>
+                          <strong>Duração:</strong>
+                          <span class="ms-2">{{ formatDuration(route.duration) }}</span>
+                        </div>
+
+                        <div class="d-flex align-items-center mb-2">
+                          <i class="bi bi-signpost text-success me-2"></i>
+                          <strong>Distância:</strong>
+                          <span class="ms-2">{{ formatDistance(route.distanceMeters) }}</span>
+                        </div>
+
+                        @if (route.description) {
+                          <div class="mt-2">
+                            <small class="text-muted">{{ route.description }}</small>
+                          </div>
+                        }
+
+                        @if (route.warnings && route.warnings.length > 0) {
+                          <div class="mt-2">
+                            @for (warning of route.warnings; track $index) {
+                              <div class="alert alert-warning py-1 px-2 mb-1">
+                                <small><i class="bi bi-exclamation-triangle me-1"></i>{{ warning }}</small>
+                              </div>
+                            }
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Detalhes da Rota Selecionada -->
+            @if (selectedRoute()) {
+              <div class="mt-4">
+                <h6 class="mb-3">Detalhes da Rota</h6>
+                
+                <div class="table-responsive">
+                  <table class="table table-sm">
+                    <thead>
+                      <tr>
+                        <th>Trecho</th>
+                        <th>Distância</th>
+                        <th>Duração</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (leg of selectedRoute()!.legs; track $index) {
+                        <tr>
+                          <td>Trecho {{ $index + 1 }}</td>
+                          <td>{{ formatDistance(leg.distanceMeters) }}</td>
+                          <td>{{ formatDuration(leg.duration) }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                    <tfoot>
+                      <tr class="table-primary">
+                        <th>Total</th>
+                        <th>{{ formatDistance(selectedRoute()!.distanceMeters) }}</th>
+                        <th>{{ formatDuration(selectedRoute()!.duration) }}</th>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+
+                @if (selectedRoute()!.travelAdvisory) {
+                  <div class="alert alert-info mt-3">
+                    <strong><i class="bi bi-info-circle me-2"></i>Informações Adicionais</strong>
+                    @if (selectedRoute()!.travelAdvisory!.fuelConsumptionMicroliters) {
+                      <div class="mt-2">
+                        <small>Consumo estimado de combustível: {{ (selectedRoute()!.travelAdvisory!.fuelConsumptionMicroliters! / 1000000).toFixed(2) }} litros</small>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      } @else if (!isLoading()) {
+        <div class="card shadow-sm border-0 bg-light">
+          <div class="card-body text-center py-5">
+            <i class="bi bi-signpost-2 text-muted" style="font-size: 3rem;"></i>
+            <h5 class="mt-3">Nenhuma rota calculada</h5>
+            <p class="text-muted">Preencha origem e destino e clique em "Calcular Rota"</p>
+          </div>
+        </div>
+      }
+
+      @if (isLoading()) {
+        <div class="card shadow-sm">
+          <div class="card-body text-center py-5">
+            <div class="spinner-border text-primary mb-3" role="status">
+              <span class="visually-hidden">Processando...</span>
+            </div>
+            <h6 class="text-primary mb-3">Processando sua solicitação...</h6>
+            <div class="text-start mx-auto" style="max-width: 400px;">
+              <div class="d-flex align-items-center mb-2">
+                <div class="spinner-border spinner-border-sm text-success me-2" role="status"></div>
+                <small class="text-muted">Validando endereços com Google Geocoding API...</small>
+              </div>
+              <div class="d-flex align-items-center">
+                <div class="spinner-border spinner-border-sm text-info me-2" role="status"></div>
+                <small class="text-muted">Calculando melhor rota...</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>
