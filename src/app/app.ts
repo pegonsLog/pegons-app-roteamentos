@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import * as XLSX from 'xlsx';
 import { GoogleGeocodeService } from './services/google-geocode.service';
 import { AddressWithCoordinates, ExcelRow } from './models/address.model';
@@ -21,8 +22,23 @@ export class App {
   successMessage = signal('');
   processedCount = signal(0);
   totalCount = signal(0);
+  private currentRoute = signal('/');
 
-  constructor(private geocodeService: GoogleGeocodeService) {}
+  constructor(
+    private geocodeService: GoogleGeocodeService,
+    private router: Router
+  ) {
+    // Monitora mudanças de rota
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe((event: any) => {
+      this.currentRoute.set(event.url);
+    });
+  }
+
+  isRootRoute(): boolean {
+    return this.currentRoute() === '/';
+  }
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
