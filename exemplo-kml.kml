@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Exemplo de Locais com Turnos</name>
+    <description>Arquivo KML de exemplo para teste do componente de upload</description>
+    
+    <Placemark>
+      <name>DENER MOREIRA</name>
+      <description><![CDATA[endereco: AV. JUIZ MARCO TULIO ISAAC, 9285 - NOVA BADEN - BETIM]]></description>
+      <styleUrl>#icon-1899-0288D1</styleUrl>
+      <ExtendedData>
+        <Data name="endereco">
+          <value>AV. JUIZ MARCO TULIO ISAAC, 9285 - NOVA BADEN - BETIM</value>
+        </Data>
+        <Data name="turno">
+          <value>1.0</value>
+        </Data>
+        <Data name="latitude">
+          <value>-19.9477183</value>
+        </Data>
+        <Data name="longitude">
+          <value>-44.1363352</value>
+        </Data>
+        <Data name="status">
+          <value>Sucesso</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>-44.1363352,-19.9477183,0</coordinates>
+      </Point>
+    </Placemark>
+    
+    <Placemark>
+      <name>MARIA SILVA</name>
+      <description><![CDATA[endereco: RUA DAS FLORES, 123 - CENTRO - BELO HORIZONTE]]></description>
+      <styleUrl>#icon-1899-0288D1</styleUrl>
+      <ExtendedData>
+        <Data name="endereco">
+          <value>RUA DAS FLORES, 123 - CENTRO - BELO HORIZONTE</value>
+        </Data>
+        <Data name="turno">
+          <value>2.0</value>
+        </Data>
+        <Data name="latitude">
+          <value>-19.9167</value>
+        </Data>
+        <Data name="longitude">
+          <value>-43.9345</value>
+        </Data>
+        <Data name="status">
+          <value>Sucesso</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>-43.9345,-19.9167,0</coordinates>
+      </Point>
+    </Placemark>
+    
+    <Placemark>
+      <name>JOÃO SANTOS</name>
+      <description><![CDATA[endereco: AV. AMAZONAS, 5000 - SAVASSI - BELO HORIZONTE]]></description>
+      <styleUrl>#icon-1899-0288D1</styleUrl>
+      <ExtendedData>
+        <Data name="endereco">
+          <value>AV. AMAZONAS, 5000 - SAVASSI - BELO HORIZONTE</value>
+        </Data>
+        <Data name="turno">
+          <value>3.0</value>
+        </Data>
+        <Data name="latitude">
+          <value>-19.9394</value>
+        </Data>
+        <Data name="longitude">
+          <value>-43.9356</value>
+        </Data>
+        <Data name="status">
+          <value>Sucesso</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>-43.9356,-19.9394,0</coordinates>
+      </Point>
+    </Placemark>
+    
+    <Placemark>
+      <name>ANA COSTA</name>
+      <description><![CDATA[endereco: RUA PERNAMBUCO, 1500 - FUNCIONÁRIOS - BELO HORIZONTE]]></description>
+      <styleUrl>#icon-1899-0288D1</styleUrl>
+      <ExtendedData>
+        <Data name="endereco">
+          <value>RUA PERNAMBUCO, 1500 - FUNCIONÁRIOS - BELO HORIZONTE</value>
+        </Data>
+        <Data name="turno">
+          <value>1.0</value>
+        </Data>
+        <Data name="latitude">
+          <value>-19.9333</value>
+        </Data>
+        <Data name="longitude">
+          <value>-43.9378</value>
+        </Data>
+        <Data name="status">
+          <value>Sucesso</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>-43.9378,-19.9333,0</coordinates>
+      </Point>
+    </Placemark>
+    
+    <Placemark>
+      <name>PEDRO OLIVEIRA</name>
+      <description><![CDATA[endereco: AV. AFONSO PENA, 3000 - CENTRO - BELO HORIZONTE]]></description>
+      <styleUrl>#icon-1899-0288D1</styleUrl>
+      <ExtendedData>
+        <Data name="endereco">
+          <value>AV. AFONSO PENA, 3000 - CENTRO - BELO HORIZONTE</value>
+        </Data>
+        <Data name="turno">
+          <value>2.0</value>
+        </Data>
+        <Data name="latitude">
+          <value>-19.9245</value>
+        </Data>
+        <Data name="longitude">
+          <value>-43.9389</value>
+        </Data>
+        <Data name="status">
+          <value>Sucesso</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>-43.9389,-19.9245,0</coordinates>
+      </Point>
+    </Placemark>
+    
+  </Document>
+</kml>

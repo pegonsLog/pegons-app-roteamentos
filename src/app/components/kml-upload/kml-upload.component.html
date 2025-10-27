@@ -1,0 +1,141 @@
+<div class="container mt-4">
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h3 class="mb-0">
+        <i class="bi bi-file-earmark-arrow-up"></i>
+        Upload de Arquivo KML
+      </h3>
+    </div>
+    
+    <div class="card-body">
+      <!-- Área de Upload -->
+      <div class="upload-section mb-4">
+        <div class="mb-3">
+          <label for="kmlFileInput" class="form-label">
+            Selecione um arquivo KML para processar
+          </label>
+          <input 
+            type="file" 
+            class="form-control" 
+            id="kmlFileInput"
+            accept=".kml"
+            (change)="onFileSelected($event)"
+            [disabled]="isProcessing()"
+          >
+          <div class="form-text">
+            O arquivo KML deve conter placemarks com informações de nome, endereço e turno.
+          </div>
+        </div>
+
+        @if (fileName()) {
+          <div class="alert alert-info d-flex align-items-center">
+            <i class="bi bi-file-earmark-text me-2"></i>
+            <span>Arquivo selecionado: <strong>{{ fileName() }}</strong></span>
+          </div>
+        }
+
+        @if (isProcessing()) {
+          <div class="alert alert-warning d-flex align-items-center">
+            <div class="spinner-border spinner-border-sm me-2" role="status">
+              <span class="visually-hidden">Processando...</span>
+            </div>
+            <span>Processando arquivo KML...</span>
+          </div>
+        }
+
+        @if (errorMessage()) {
+          <div class="alert alert-danger d-flex align-items-center">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <span [innerHTML]="errorMessage()"></span>
+          </div>
+        }
+
+        @if (successMessage()) {
+          <div class="alert alert-success d-flex align-items-center">
+            <i class="bi bi-check-circle me-2"></i>
+            <span [innerHTML]="successMessage()"></span>
+          </div>
+        }
+      </div>
+
+      <!-- Tabela de Dados Extraídos -->
+      @if (extractedData().length > 0) {
+        <div class="data-section">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">
+              <i class="bi bi-table"></i>
+              Dados Extraídos ({{ extractedData().length }} registros)
+            </h5>
+            <div class="btn-group">
+              <button 
+                class="btn btn-success"
+                (click)="exportToExcel()"
+                title="Exportar para Excel"
+              >
+                <i class="bi bi-file-earmark-excel"></i>
+                Exportar para Excel
+              </button>
+              <button 
+                class="btn btn-outline-secondary"
+                (click)="clearData()"
+                title="Limpar dados"
+              >
+                <i class="bi bi-trash"></i>
+                Limpar
+              </button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-striped table-hover">
+              <thead class="table-dark">
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Nome</th>
+                  <th scope="col">Endereço</th>
+                  <th scope="col">Turno</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of extractedData(); track $index) {
+                  <tr>
+                    <td>{{ $index + 1 }}</td>
+                    <td>{{ item.nome }}</td>
+                    <td>{{ item.endereco }}</td>
+                    <td>
+                      <span class="text-dark">{{ item.turno }}</span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+      <!-- Instruções -->
+      @if (extractedData().length === 0 && !isProcessing()) {
+        <div class="instructions mt-4">
+          <h5><i class="bi bi-info-circle"></i> Como usar:</h5>
+          <ol>
+            <li>Clique no campo acima para selecionar um arquivo KML do seu computador</li>
+            <li>O sistema irá processar o arquivo e extrair os dados automaticamente</li>
+            <li>Os dados extraídos serão exibidos em uma tabela</li>
+            <li>Clique em "Exportar para Excel" para baixar os dados em formato .xlsx</li>
+          </ol>
+
+          <div class="alert alert-light mt-3">
+            <h6><i class="bi bi-lightbulb"></i> Dicas:</h6>
+            <ul class="mb-0">
+              <li>O arquivo KML deve conter tags <code>&lt;Placemark&gt;</code> com informações dos locais</li>
+              <li>O <strong>nome</strong> é extraído da tag <code>&lt;name&gt;</code></li>
+              <li>O <strong>endereço</strong> pode estar na tag <code>&lt;address&gt;</code> ou na descrição</li>
+              <li>O <strong>turno</strong> é identificado automaticamente na descrição (palavras-chave: manhã, tarde, noite, etc.)</li>
+              <li>Se alguma informação não for encontrada, valores padrão serão usados</li>
+            </ul>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>
