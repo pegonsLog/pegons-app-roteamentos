@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MapaService } from '../../services/mapa.service';
 import { Mapa, MapaFormData } from '../../models/mapa.model';
+import { SanitizeUrlPipe } from '../../pipes/sanitize-url.pipe';
 
 @Component({
   selector: 'app-lista-mapas',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SanitizeUrlPipe],
   templateUrl: './lista-mapas.component.html',
   styleUrl: './lista-mapas.component.css'
 })
@@ -135,6 +136,32 @@ export class ListaMapasComponent implements OnInit {
 
   abrirMapa(url: string): void {
     this.mapaService.abrirMapa(url);
+  }
+
+  // Converte URL do Google My Maps para formato de embed
+  getEmbedUrl(url: string): string {
+    // Se já for uma URL de embed, retorna como está
+    if (url.includes('/embed')) {
+      return url;
+    }
+    
+    // Extrai o ID do mapa da URL
+    // Formato: https://www.google.com/maps/d/viewer?mid=XXXXX ou
+    // https://www.google.com/maps/d/edit?mid=XXXXX&usp=sharing
+    const midMatch = url.match(/mid=([^&]+)/);
+    if (midMatch) {
+      return `https://www.google.com/maps/d/embed?mid=${midMatch[1]}`;
+    }
+    
+    // Se não conseguir extrair o ID, tenta outro formato
+    // https://www.google.com/maps/d/u/0/viewer?mid=XXXXX
+    const altMatch = url.match(/\/d\/(?:u\/\d+\/)?(?:viewer|edit)\?mid=([^&]+)/);
+    if (altMatch) {
+      return `https://www.google.com/maps/d/embed?mid=${altMatch[1]}`;
+    }
+    
+    // Retorna a URL original se não conseguir converter
+    return url;
   }
 
   // Métodos de Drag and Drop

@@ -5,6 +5,7 @@ import { Observable, forkJoin, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { GoogleRoutesService } from '../../services/google-routes.service';
 import { GoogleGeocodeService } from '../../services/google-geocode.service';
+import { GoogleDriveService } from '../../services/google-drive.service';
 import { Route } from '../../models/route.model';
 
 @Component({
@@ -43,7 +44,8 @@ export class RotasComponent {
 
   constructor(
     private routesService: GoogleRoutesService,
-    private geocodeService: GoogleGeocodeService
+    private geocodeService: GoogleGeocodeService,
+    private driveService: GoogleDriveService
   ) {}
 
   addWaypoint(): void {
@@ -310,21 +312,42 @@ export class RotasComponent {
     setTimeout(() => this.successMessage.set(''), 3000);
   }
 
-  exportRouteAsKML(): void {
+  async exportRouteAsKML(): Promise<void> {
     const route = this.selectedRoute();
     if (!route) return;
 
-    const kml = this.generateKML(route);
-    const blob = new Blob([kml], { type: 'application/vnd.google-earth.kml+xml' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `rota_${Date.now()}.kml`;
-    link.click();
-    URL.revokeObjectURL(url);
+    this.isLoading.set(true);
+    this.errorMessage.set('');
 
-    this.successMessage.set('Rota exportada como KML! Você pode importar no Google My Maps.');
-    setTimeout(() => this.successMessage.set(''), 4000);
+    try {
+      const kml = this.generateKML(route);
+      const fileName = `rota_${this.origin()}_${this.destination()}_${Date.now()}.kml`;
+      
+      // Busca ou cria a pasta "Rotas Pegons"
+      let folder = await this.driveService.findFolderByName('Rotas Pegons');
+      if (!folder) {
+        folder = await this.driveService.createFolder('Rotas Pegons');
+      }
+
+      // Faz upload do arquivo KML
+      const file = await this.driveService.uploadFile(
+        fileName,
+        kml,
+        'application/vnd.google-earth.kml+xml',
+        folder.id
+      );
+
+      // Compartilha com pegons.app@gmail.com
+      await this.driveService.shareFileWithEmail(file.id, 'pegons.app@gmail.com', 'writer');
+
+      this.successMessage.set('✅ Rota enviada para o Google Drive com sucesso! Arquivo compartilhado com pegons.app@gmail.com');
+      setTimeout(() => this.successMessage.set(''), 5000);
+    } catch (error: any) {
+      console.error('Erro ao enviar para Google Drive:', error);
+      this.errorMessage.set(`❌ Erro ao enviar para Google Drive: ${error.message || 'Erro desconhecido'}`);
+    } finally {
+      this.isLoading.set(false);
+    }
   }
 
   private generateKML(route: Route): string {

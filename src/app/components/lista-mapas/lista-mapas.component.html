@@ -190,6 +190,34 @@
           </div>
         }
       </div>
+
+      <!-- Seção de Mapas em Grid -->
+      <div class="mt-5">
+        <h4 class="mb-4">
+          <i class="bi bi-map-fill me-2"></i>Visualização dos Mapas
+        </h4>
+        
+        <div class="row g-3">
+          @for (mapa of mapas(); track mapa.id) {
+            <div class="col-md-6 col-lg-4">
+              <div class="map-container">
+                <h5 class="map-title">
+                  <i class="bi bi-geo-alt-fill me-2"></i>{{ mapa.nomeMapa }}
+                </h5>
+                <div class="map-frame-wrapper">
+                  <iframe 
+                    [src]="getEmbedUrl(mapa.urlMapa) | sanitizeUrl"
+                    class="map-iframe"
+                    frameborder="0"
+                    allowfullscreen
+                    loading="lazy">
+                  </iframe>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
     }
   }
 </div>
