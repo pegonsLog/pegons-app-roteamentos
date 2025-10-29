@@ -70,14 +70,21 @@
               <button 
                 class="btn btn-success"
                 (click)="exportToExcel()"
-                title="Exportar para Excel"
+                [disabled]="isUploading()"
+                title="Salvar no Google Drive"
               >
-                <i class="bi bi-file-earmark-excel"></i>
-                Exportar para Excel
+                @if (isUploading()) {
+                  <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                  Salvando...
+                } @else {
+                  <i class="bi bi-cloud-upload"></i>
+                  Salvar no Google Drive
+                }
               </button>
               <button 
                 class="btn btn-outline-secondary"
                 (click)="clearData()"
+                [disabled]="isUploading()"
                 title="Limpar dados"
               >
                 <i class="bi bi-trash"></i>
@@ -121,7 +128,7 @@
             <li>Clique no campo acima para selecionar um arquivo KML do seu computador</li>
             <li>O sistema irá processar o arquivo e extrair os dados automaticamente</li>
             <li>Os dados extraídos serão exibidos em uma tabela</li>
-            <li>Clique em "Exportar para Excel" para baixar os dados em formato .xlsx</li>
+            <li>Clique em "Salvar no Google Drive" para salvar os dados na pasta "Roteamentos/Planilhas Excel/Listas de atendimento"</li>
           </ol>
 
           <div class="alert alert-light mt-3">

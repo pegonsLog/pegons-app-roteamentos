@@ -96,7 +96,7 @@ export class GoogleDriveService {
    */
   async uploadFile(
     fileName: string,
-    fileContent: string,
+    fileContent: string | ArrayBuffer | Blob,
     mimeType: string,
     folderId?: string
   ): Promise<any> {
@@ -111,7 +111,18 @@ export class GoogleDriveService {
 
       const form = new FormData();
       form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-      form.append('file', new Blob([fileContent], { type: mimeType }));
+      
+      // Converte o conteúdo para Blob se necessário
+      let fileBlob: Blob;
+      if (fileContent instanceof Blob) {
+        fileBlob = fileContent;
+      } else if (fileContent instanceof ArrayBuffer) {
+        fileBlob = new Blob([fileContent], { type: mimeType });
+      } else {
+        fileBlob = new Blob([fileContent], { type: mimeType });
+      }
+      
+      form.append('file', fileBlob);
 
       const response = await fetch(
         'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
@@ -174,13 +185,17 @@ export class GoogleDriveService {
   /**
    * Busca uma pasta pelo nome
    */
-  async findFolderByName(folderName: string): Promise<any> {
+  async findFolderByName(folderName: string, parentFolderId?: string): Promise<any> {
     try {
       const accessToken = await this.authenticate();
 
-      const query = `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+      let query = `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+      if (parentFolderId) {
+        query += ` and '${parentFolderId}' in parents`;
+      }
+      
       const response = await fetch(
-        `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}`,
+        `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,parents)&spaces=drive`,
         {
           method: 'GET',
           headers: {
@@ -197,6 +212,35 @@ export class GoogleDriveService {
       return data.files && data.files.length > 0 ? data.files[0] : null;
     } catch (error) {
       console.error('Erro ao buscar pasta no Google Drive:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Busca uma estrutura de pastas aninhadas existente
+   * @param folderPath Caminho da pasta separado por / (ex: "Roteamentos/Planilhas Excel/Listas de atendimento")
+   * @returns ID da pasta final
+   */
+  async findOrCreateFolderPath(folderPath: string): Promise<string> {
+    try {
+      const folders = folderPath.split('/').map(f => f.trim()).filter(f => f);
+      let currentParentId: string | undefined = undefined;
+
+      for (let i = 0; i < folders.length; i++) {
+        const folderName = folders[i];
+        const folder = await this.findFolderByName(folderName, currentParentId);
+        
+        if (!folder) {
+          const pathSoFar = folders.slice(0, i + 1).join('/');
+          throw new Error(`Pasta não encontrada: "${pathSoFar}". Por favor, verifique se a estrutura de pastas existe no Google Drive.`);
+        }
+        
+        currentParentId = folder.id;
+      }
+
+      return currentParentId!;
+    } catch (error) {
+      console.error('Erro ao buscar estrutura de pastas:', error);
       throw error;
     }
   }

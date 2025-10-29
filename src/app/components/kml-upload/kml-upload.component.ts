@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as XLSX from 'xlsx';
+import { GoogleDriveService } from '../../services/google-drive.service';
 
 interface LocalData {
   nome: string;
@@ -22,6 +23,9 @@ export class KmlUploadComponent {
   successMessage = signal('');
   extractedData = signal<LocalData[]>([]);
   fileName = signal('');
+  isUploading = signal(false);
+
+  constructor(private googleDriveService: GoogleDriveService) {}
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -179,13 +183,17 @@ export class KmlUploadComponent {
     return data;
   }
 
-  exportToExcel(): void {
+  async exportToExcel(): Promise<void> {
     const data = this.extractedData();
     
     if (data.length === 0) {
       this.errorMessage.set('❌ Não há dados para exportar');
       return;
     }
+
+    this.isUploading.set(true);
+    this.errorMessage.set('');
+    this.successMessage.set('');
 
     try {
       // Cria uma planilha a partir dos dados
@@ -213,14 +221,48 @@ export class KmlUploadComponent {
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Locais');
 
-      // Gera o arquivo
-      const fileName = `locais_${this.getTimestamp()}.xlsx`;
-      XLSX.writeFile(workbook, fileName);
+      // Gera o arquivo como array buffer
+      const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      
+      // Gera o nome do arquivo baseado nos turnos
+      const fileName = this.generateFileName();
+      
+      // Busca a pasta existente no Google Drive
+      const folderId = await this.googleDriveService.findOrCreateFolderPath('Roteamentos/Planilhas Excel/Listas de atendimento');
+      
+      // Faz upload para o Google Drive
+      await this.googleDriveService.uploadFile(
+        fileName,
+        blob,
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        folderId
+      );
 
-      this.successMessage.set(`✅ Arquivo Excel exportado com sucesso: ${fileName}`);
-      setTimeout(() => this.successMessage.set(''), 4000);
+      this.successMessage.set(`✅ Arquivo salvo no Google Drive: ${fileName}`);
+      setTimeout(() => this.successMessage.set(''), 5000);
     } catch (error) {
-      this.errorMessage.set(`❌ Erro ao exportar para Excel: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      console.error('Erro ao exportar:', error);
+      this.errorMessage.set(`❌ Erro ao salvar no Google Drive: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+    } finally {
+      this.isUploading.set(false);
+    }
+  }
+
+  private generateFileName(): string {
+    const data = this.extractedData();
+    
+    // Extrai os turnos únicos dos dados
+    const turnos = [...new Set(data.map(item => item.turno))]
+      .filter(turno => turno && turno !== 'Não especificado')
+      .sort();
+    
+    // Gera o nome do arquivo
+    if (turnos.length > 0) {
+      const turnosStr = turnos.join('_');
+      return `atendimento_turno_${turnosStr}_${this.getTimestamp()}.xlsx`;
+    } else {
+      return `atendimento_${this.getTimestamp()}.xlsx`;
     }
   }
 
