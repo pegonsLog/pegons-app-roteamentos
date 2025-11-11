@@ -1,17 +1,46 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <title>Roteamento</title>
+  <title>Pegons - Sistema de Roteamento Inteligente</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Sistema completo de geocodificação, roteamento e gestão de mapas para otimizar suas entregas e rotas.">
+  <meta name="keywords" content="roteamento, geocodificação, mapas, GPS, rotas, entregas, logística">
+  <meta name="author" content="Pegons">
+  <meta name="theme-color" content="#667eea">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Pegons - Sistema de Roteamento Inteligente">
+  <meta property="og:description" content="Sistema completo de geocodificação, roteamento e gestão de mapas.">
+  
+  <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  
+  <!-- Preconnect para melhor performance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://apis.google.com">
   
   <!-- Google API Client Library -->
   <script src="https://apis.google.com/js/api.js"></script>
   <script src="https://accounts.google.com/gsi/client"></script>
 </head>
 <body>
-  <app-root></app-root>
+  <app-root>
+    <!-- Loading inicial com estilo moderno -->
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+      <div style="text-align: center;">
+        <div style="width: 60px; height: 60px; border: 5px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+        <h2 style="margin: 0; font-family: 'Montserrat', sans-serif; font-weight: 600;">Carregando Pegons...</h2>
+      </div>
+    </div>
+    <style>
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
+  </app-root>
 </body>
 </html>

@@ -140,8 +140,13 @@ export class ListaMapasComponent implements OnInit {
 
   // Converte URL do Google My Maps para formato de embed
   getEmbedUrl(url: string): string {
-    // Se já for uma URL de embed, retorna como está
+    // Se já for uma URL de embed, verifica se tem os parâmetros necessários
     if (url.includes('/embed')) {
+      // Se já tem embed mas não tem os parâmetros de acesso público, adiciona
+      if (!url.includes('hl=') && !url.includes('authuser=')) {
+        const separator = url.includes('?') ? '&' : '?';
+        return `${url}${separator}hl=pt-BR`;
+      }
       return url;
     }
     
@@ -150,14 +155,15 @@ export class ListaMapasComponent implements OnInit {
     // https://www.google.com/maps/d/edit?mid=XXXXX&usp=sharing
     const midMatch = url.match(/mid=([^&]+)/);
     if (midMatch) {
-      return `https://www.google.com/maps/d/embed?mid=${midMatch[1]}`;
+      // Adiciona parâmetros para forçar visualização pública sem autenticação
+      return `https://www.google.com/maps/d/embed?mid=${midMatch[1]}&hl=pt-BR`;
     }
     
     // Se não conseguir extrair o ID, tenta outro formato
     // https://www.google.com/maps/d/u/0/viewer?mid=XXXXX
     const altMatch = url.match(/\/d\/(?:u\/\d+\/)?(?:viewer|edit)\?mid=([^&]+)/);
     if (altMatch) {
-      return `https://www.google.com/maps/d/embed?mid=${altMatch[1]}`;
+      return `https://www.google.com/maps/d/embed?mid=${altMatch[1]}&hl=pt-BR`;
     }
     
     // Retorna a URL original se não conseguir converter

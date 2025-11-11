@@ -1,29 +1,105 @@
+/* ========================================
+   ROTAS - DESIGN MODERNO
+   ======================================== */
+
+/* Cards de Rota */
 .route-card {
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all var(--transition-normal);
   border: 2px solid transparent;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(145deg, rgba(255,255,255,0.98), rgba(255,255,255,1));
+}
+
+.route-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 0;
+  background: var(--gradient-primary);
+  transition: height 0.3s ease;
+}
+
+.route-card:hover::before {
+  height: 100%;
 }
 
 .route-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: var(--shadow-xl) !important;
+  border-color: rgba(102, 126, 234, 0.2);
 }
 
 .route-card.selected {
-  border-color: #0d6efd;
-  background-color: rgba(13, 110, 253, 0.05);
+  border-color: var(--color-primary);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.05) 100%);
+  box-shadow: var(--shadow-lg), 0 0 20px rgba(102, 126, 234, 0.2);
 }
 
+.route-card.selected::before {
+  height: 100%;
+  width: 5px;
+}
+
+.route-card.selected::after {
+  content: '✓';
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  background: var(--gradient-primary);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.1rem;
+  box-shadow: var(--shadow-md);
+  animation: scaleIn 0.3s ease;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0) rotate(-180deg);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+  }
+}
+
+/* Informações da Rota */
 .route-info {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
 }
 
 .route-info strong {
-  font-weight: 600;
+  font-weight: 700;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
+/* Lista de Itens */
 .list-group-item {
-  padding: 0.5rem 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  transition: all var(--transition-fast);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.list-group-item:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.03) 100%);
+  border-color: var(--color-primary);
+  transform: translateX(5px);
 }
 
 .list-group-item .text-truncate {
@@ -31,6 +107,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: all var(--transition-normal);
 }
 
 .list-group-item:hover .text-truncate {
@@ -38,29 +115,129 @@
   overflow: visible;
 }
 
+/* Título dos Cards */
 .card-title {
-  color: #0d6efd;
-  font-weight: 600;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  font-size: 1.25rem;
 }
 
+/* Form Checks Modernos */
 .form-check {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding-left: 2rem;
 }
 
+.form-check-input {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid var(--color-primary);
+  transition: all var(--transition-normal);
+}
+
+.form-check-input:checked {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+}
+
+.form-check-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.form-check-label {
+  font-weight: 500;
+  color: #2d3748;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.form-check-label:hover {
+  color: var(--color-primary);
+}
+
+/* Alertas */
 .alert-warning {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+  border-left: 4px solid #f093fb;
+  background: linear-gradient(135deg, rgba(240, 147, 251, 0.1) 0%, rgba(245, 87, 108, 0.08) 100%);
 }
 
+/* Tabelas */
 .table-sm th,
 .table-sm td {
-  padding: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-color: rgba(102, 126, 234, 0.1);
+}
+
+.table-sm th {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  color: white;
 }
 
 /* Espaçamento entre botões de ação */
-.d-flex.gap-2 > * {
-  margin-right: 0.5rem;
+.d-flex.gap-2 {
+  gap: 0.5rem !important;
 }
 
-.d-flex.gap-2 > *:last-child {
+.d-flex.gap-2 > * {
   margin-right: 0;
+}
+
+/* Badges Modernos */
+.badge {
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.badge-primary {
+  background: var(--gradient-primary);
+}
+
+.badge-success {
+  background: var(--gradient-success);
+}
+
+/* Validação de Input */
+.form-control.is-valid {
+  border-color: #11998e;
+  background-image: none;
+}
+
+.form-control.is-invalid {
+  border-color: #fa709a;
+  background-image: none;
+}
+
+.valid-feedback,
+.invalid-feedback {
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+/* ========================================
+   RESPONSIVIDADE
+   ======================================== */
+@media (max-width: 768px) {
+  .route-card {
+    margin-bottom: 1rem;
+  }
+  
+  .route-info {
+    font-size: 0.85rem;
+  }
+  
+  .card-title {
+    font-size: 1.1rem;
+  }
 }

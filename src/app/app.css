@@ -1,24 +1,308 @@
-/* Estilizar botão de arquivo (input file) para upload de Excel */
+/* ========================================
+   NAVBAR MODERNA
+   ======================================== */
+.modern-navbar {
+  background: var(--gradient-primary);
+  box-shadow: var(--shadow-lg);
+  padding: 1rem 0;
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: visible;
+  z-index: 1040;
+}
+
+.modern-navbar .container-fluid {
+  overflow: visible;
+}
+
+.modern-navbar .navbar-collapse {
+  overflow: visible;
+}
+
+.modern-navbar .navbar-nav {
+  overflow: visible;
+}
+
+.modern-navbar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.5) 50%, 
+    transparent 100%);
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: white !important;
+  text-decoration: none;
+  transition: var(--transition-normal);
+}
+
+.brand-logo:hover {
+  transform: scale(1.05);
+}
+
+.logo-wrapper {
+  background: rgba(255, 255, 255, 0.2);
+  width: 45px;
+  height: 45px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.brand-text {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.brand-subtitle {
+  font-size: 0.7rem;
+  font-weight: 400;
+  opacity: 0.9;
+  margin-left: -0.5rem;
+  display: block;
+  margin-top: -5px;
+}
+
+.nav-link-modern {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem !important;
+  border-radius: var(--radius-md);
+  transition: var(--transition-normal);
+  color: rgba(255, 255, 255, 0.85) !important;
+  font-weight: 500;
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-link-modern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.1);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.nav-link-modern:hover::before {
+  transform: scaleX(1);
+}
+
+.nav-link-modern:hover {
+  color: white !important;
+  transform: translateY(-2px);
+}
+
+.nav-link-modern.active {
+  background: rgba(255, 255, 255, 0.25);
+  color: white !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.nav-link-modern i {
+  font-size: 1.1rem;
+}
+
+/* Link do Drive com Badge e Dropdown */
+.drive-link {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 0.5rem 1.25rem !important;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  transition: all var(--transition-normal);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.drive-link:hover,
+.drive-link.show,
+.drive-link:focus {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  color: white;
+  outline: none;
+}
+
+/* Dropdown do Drive */
+.drive-dropdown {
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  padding: 0.5rem;
+  min-width: 240px;
+  margin-top: 0.5rem !important;
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 9999 !important;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.drive-dropdown.show {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+  animation: dropdownFadeIn 0.3s ease;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown {
+  position: relative;
+  z-index: 1050;
+}
+
+.nav-item.dropdown {
+  position: relative;
+  z-index: 1050;
+}
+
+.drive-dropdown .dropdown-item {
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  transition: all var(--transition-fast);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  color: #2d3748;
+}
+
+.drive-dropdown .dropdown-item:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.08) 100%);
+  transform: translateX(5px);
+  color: var(--color-primary);
+}
+
+.drive-dropdown .dropdown-item:active {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.12) 100%);
+}
+
+.drive-dropdown .dropdown-divider {
+  border-color: rgba(102, 126, 234, 0.15);
+  margin: 0.5rem 0;
+}
+
+.drive-dropdown .dropdown-item i {
+  font-size: 1.1rem;
+}
+
+/* ========================================
+   UPLOAD DE ARQUIVO MODERNO
+   ======================================== */
+.form-control[type="file"] {
+  border: 2px dashed var(--color-primary);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  transition: var(--transition-normal);
+}
+
+.form-control[type="file"]:hover {
+  border-color: var(--color-primary-dark);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  transform: scale(1.01);
+}
+
 .form-control[type="file"]::file-selector-button {
-  background-color: #0d6efd;
+  background: var(--gradient-primary);
   color: white;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  font-weight: 500;
+  padding: 0.625rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition-normal);
   margin-right: 1rem;
+  box-shadow: var(--shadow-md);
 }
 
 .form-control[type="file"]::file-selector-button:hover {
-  background-color: #0b5ed7;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg), var(--shadow-glow);
+}
+
+.form-control[type="file"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .form-control[type="file"]:disabled::file-selector-button {
-  background-color: #6c757d;
+  background: #6c757d;
   cursor: not-allowed;
   transform: none;
+  box-shadow: none;
+}
+
+/* ========================================
+   RESPONSIVIDADE NAVBAR
+   ======================================== */
+@media (max-width: 991px) {
+  .brand-subtitle {
+    display: none;
+  }
+  
+  .nav-link-modern {
+    margin: 0.25rem 0;
+  }
+  
+  .navbar-nav.mx-auto {
+    margin-top: 1rem;
+  }
+  
+  .drive-link {
+    margin-top: 1rem;
+  }
 }

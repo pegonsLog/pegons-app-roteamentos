@@ -60,10 +60,11 @@ export class GoogleDriveService {
 
   /**
    * Autentica o usuário com Google OAuth2
+   * @param forceAccountSelection Se true, força a seleção de conta mesmo se já estiver autenticado
    */
-  async authenticate(): Promise<string> {
-    // Se já temos um token válido, reutiliza
-    if (this.isTokenValid() && this.accessToken) {
+  async authenticate(forceAccountSelection: boolean = false): Promise<string> {
+    // Se já temos um token válido e não estamos forçando nova seleção, reutiliza
+    if (!forceAccountSelection && this.isTokenValid() && this.accessToken) {
       return this.accessToken;
     }
 
@@ -72,11 +73,12 @@ export class GoogleDriveService {
     }
 
     return new Promise((resolve, reject) => {
-      this.tokenClient = (window as any).google.accounts.oauth2.initTokenClient({
+      const tokenClientConfig: any = {
         client_id: this.CLIENT_ID,
         scope: this.SCOPES,
         callback: (response: any) => {
           if (response.error) {
+            console.error('Erro na autenticação:', response.error);
             reject(response);
           } else {
             // Armazena o token e define a expiração (padrão: 1 hora)
@@ -85,10 +87,31 @@ export class GoogleDriveService {
             resolve(response.access_token);
           }
         },
-      });
+      };
 
-      this.tokenClient.requestAccessToken();
+      // Se forçar seleção de conta, adiciona o parâmetro hint vazio para mostrar o seletor
+      if (forceAccountSelection) {
+        tokenClientConfig.hint = '';
+      }
+
+      this.tokenClient = (window as any).google.accounts.oauth2.initTokenClient(tokenClientConfig);
+
+      // Se estamos forçando a seleção, solicita com prompt
+      if (forceAccountSelection) {
+        this.tokenClient.requestAccessToken({ prompt: 'select_account' });
+      } else {
+        this.tokenClient.requestAccessToken();
+      }
     });
+  }
+
+  /**
+   * Força a troca de conta do Google
+   * Limpa o token atual e abre o seletor de contas
+   */
+  async switchAccount(): Promise<string> {
+    this.clearToken();
+    return this.authenticate(true);
   }
 
   /**

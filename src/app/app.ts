@@ -24,6 +24,7 @@ export class App {
   processedCount = signal(0);
   totalCount = signal(0);
   private currentRoute = signal('/');
+  driveDropdownOpen = signal(false);
 
   constructor(
     private geocodeService: GoogleGeocodeService,
@@ -380,5 +381,38 @@ export class App {
     this.errorMessage.set('');
     this.successMessage.set('');
     this.loadingMessage.set('');
+  }
+
+  /**
+   * Toggle do dropdown do Drive
+   */
+  toggleDriveDropdown(): void {
+    this.driveDropdownOpen.set(!this.driveDropdownOpen());
+  }
+
+  /**
+   * Fecha o dropdown do Drive
+   */
+  closeDriveDropdown(): void {
+    this.driveDropdownOpen.set(false);
+  }
+
+  /**
+   * Troca a conta do Google para operações com o Drive
+   */
+  async switchGoogleAccount(): Promise<void> {
+    this.closeDriveDropdown();
+    try {
+      this.loadingMessage.set('🔄 Abrindo seletor de contas do Google...');
+      await this.driveService.switchAccount();
+      this.successMessage.set('✅ Conta do Google alterada com sucesso!');
+      setTimeout(() => this.successMessage.set(''), 3000);
+    } catch (error) {
+      console.error('Erro ao trocar conta:', error);
+      this.errorMessage.set('❌ Erro ao trocar de conta. Tente novamente.');
+      setTimeout(() => this.errorMessage.set(''), 5000);
+    } finally {
+      this.loadingMessage.set('');
+    }
   }
 }
