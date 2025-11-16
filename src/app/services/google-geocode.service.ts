@@ -23,7 +23,6 @@ export class GoogleGeocodeService {
     // Verificar cache
     const cached = this.geocodeCache.get(address);
     if (cached) {
-      console.log('📦 Cache hit:', address);
       return new Observable(observer => {
         observer.next(cached);
         observer.complete();
@@ -41,7 +40,6 @@ export class GoogleGeocodeService {
           // Armazenar no cache
           this.geocodeCache.set(address, result);
           
-          console.log('✅ Geocodificado:', address);
           return result;
         } else if (response.status === 'ZERO_RESULTS') {
           throw new Error(`ZERO_RESULTS: Endereço não encontrado`);
@@ -114,7 +112,6 @@ export class GoogleGeocodeService {
 
   clearCache(): void {
     this.geocodeCache.clear();
-    console.log('🗑️ Cache de geocodificação limpo');
   }
 
   getCacheSize(): number {

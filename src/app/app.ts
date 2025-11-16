@@ -5,6 +5,7 @@ import { filter } from 'rxjs/operators';
 import * as XLSX from 'xlsx';
 import { GoogleGeocodeService } from './services/google-geocode.service';
 import { GoogleDriveService } from './services/google-drive.service';
+import { FirestoreDataService } from './services/firestore-data.service';
 import { AddressWithCoordinates, ExcelRow } from './models/address.model';
 
 @Component({
@@ -32,6 +33,7 @@ export class App {
   constructor(
     private geocodeService: GoogleGeocodeService,
     private driveService: GoogleDriveService,
+    private firestoreService: FirestoreDataService,
     private router: Router
   ) {
     // Monitora mudanças de rota
@@ -505,6 +507,46 @@ export class App {
       this.isLoading.set(false);
       this.loadingMessage.set('');
       console.error('Erro ao processar Excel:', error);
+    }
+  }
+
+  /**
+   * Salva os endereços geocodificados no Firestore
+   */
+  async saveToFirestore(): Promise<void> {
+    const addresses = this.addresses();
+    
+    if (addresses.length === 0) {
+      this.errorMessage.set('Não há dados para salvar.');
+      return;
+    }
+
+    // Filtra apenas endereços geocodificados com sucesso
+    const successAddresses = addresses.filter(addr => addr.status === 'success');
+    
+    if (successAddresses.length === 0) {
+      this.errorMessage.set('Não há endereços geocodificados com sucesso para salvar.');
+      return;
+    }
+
+    if (!confirm(`Deseja salvar ${successAddresses.length} endereço(s) no Firestore? Os dados serão organizados por turno.`)) {
+      return;
+    }
+
+    this.isLoading.set(true);
+    this.errorMessage.set('');
+    this.loadingMessage.set('💾 Salvando dados no Firestore...');
+
+    try {
+      await this.firestoreService.saveAddressesByShift(successAddresses);
+      this.successMessage.set(`✅ ${successAddresses.length} endereço(s) salvos no Firestore com sucesso!`);
+      setTimeout(() => this.successMessage.set(''), 5000);
+    } catch (error: any) {
+      console.error('Erro ao salvar no Firestore:', error);
+      this.errorMessage.set(`❌ Erro ao salvar no Firestore: ${error.message || 'Erro desconhecido'}`);
+    } finally {
+      this.isLoading.set(false);
+      this.loadingMessage.set('');
     }
   }
 }

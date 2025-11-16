@@ -29,7 +29,6 @@ export class GoogleRoutesService {
 
     return this.http.post<RoutesResponse>(this.apiUrl, body, { headers }).pipe(
       map(response => {
-        console.log('✅ Rota calculada com sucesso:', response);
         return response;
       }),
       catchError(error => {
