@@ -1,0 +1,147 @@
+.path-navigation {
+  background-color: #f8f9fa;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #dee2e6;
+}
+
+.current-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.current-path .badge {
+  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
+}
+
+.upload-section .card {
+  border: 2px dashed #dee2e6;
+}
+
+.upload-section .card:hover {
+  border-color: #0d6efd;
+  background-color: #f8f9fa !important;
+}
+
+.folder-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.folder-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.folder-icon {
+  font-size: 3rem;
+  color: white;
+  margin-bottom: 0.5rem;
+}
+
+.folder-name {
+  color: white;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.file-name {
+  font-weight: 500;
+  color: #212529;
+  word-break: break-word;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+.btn-group-sm .btn {
+  padding: 0.25rem 0.5rem;
+}
+
+/* Ícones coloridos */
+.bi-file-image {
+  color: #28a745;
+}
+
+.bi-file-pdf {
+  color: #dc3545;
+}
+
+.bi-file-play {
+  color: #6f42c1;
+}
+
+.bi-file-music {
+  color: #fd7e14;
+}
+
+.bi-file-text {
+  color: #17a2b8;
+}
+
+.bi-file-spreadsheet {
+  color: #28a745;
+}
+
+.bi-file-word {
+  color: #0d6efd;
+}
+
+.bi-file-zip {
+  color: #6c757d;
+}
+
+.bi-file-earmark {
+  color: #6c757d;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .path-navigation .d-flex {
+    flex-wrap: wrap;
+  }
+
+  .current-path {
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+
+  .table-responsive {
+    font-size: 0.875rem;
+  }
+
+  .btn-group-sm .btn {
+    padding: 0.2rem 0.4rem;
+  }
+}
+
+/* Animações */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.folder-card,
+.table tbody tr {
+  animation: fadeIn 0.3s ease;
+}
+
+/* Loading spinner customizado */
+.spinner-border {
+  width: 3rem;
+  height: 3rem;
+}

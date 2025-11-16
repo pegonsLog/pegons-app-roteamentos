@@ -4,8 +4,8 @@ import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } fro
 import { filter } from 'rxjs/operators';
 import * as XLSX from 'xlsx';
 import { GoogleGeocodeService } from './services/google-geocode.service';
-import { GoogleDriveService } from './services/google-drive.service';
 import { FirestoreDataService } from './services/firestore-data.service';
+import { FirebaseStorageService } from './services/firebase-storage.service';
 import { AddressWithCoordinates, ExcelRow } from './models/address.model';
 
 @Component({
@@ -25,15 +25,11 @@ export class App {
   processedCount = signal(0);
   totalCount = signal(0);
   private currentRoute = signal('/');
-  driveDropdownOpen = signal(false);
-  driveFilesModalOpen = signal(false);
-  driveFiles = signal<any[]>([]);
-  loadingDriveFiles = signal(false);
 
   constructor(
     private geocodeService: GoogleGeocodeService,
-    private driveService: GoogleDriveService,
     private firestoreService: FirestoreDataService,
+    private storageService: FirebaseStorageService,
     private router: Router
   ) {
     // Monitora mudanças de rota
@@ -143,11 +139,14 @@ export class App {
     return formatted;
   }
 
-  async exportToCSV(): Promise<void> {
+  /**
+   * Salva todos os endereços geocodificados no Firebase Storage
+   */
+  async saveToStorage(): Promise<void> {
     const addresses = this.addresses();
     
     if (addresses.length === 0) {
-      this.errorMessage.set('Não há dados para exportar.');
+      this.errorMessage.set('Não há dados para salvar.');
       return;
     }
 
@@ -155,11 +154,12 @@ export class App {
     const successAddresses = addresses.filter(addr => addr.status === 'success');
     
     if (successAddresses.length === 0) {
-      this.errorMessage.set('Não há endereços geocodificados com sucesso para exportar.');
+      this.errorMessage.set('Não há endereços geocodificados com sucesso para salvar.');
       return;
     }
 
     this.isLoading.set(true);
+    this.loadingMessage.set('☁️ Salvando no Firebase Storage...');
     this.errorMessage.set('');
 
     try {
@@ -182,47 +182,37 @@ export class App {
       // Gera o arquivo CSV
       const csvOutput = XLSX.write(workbook, { bookType: 'csv', type: 'string' });
       
-      // Gera timestamp para nome da pasta e arquivo
+      // Gera timestamp para nome do arquivo
       const now = new Date();
-      const dateFolder = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()}_${now.getHours().toString().padStart(2, '0')}h${now.getMinutes().toString().padStart(2, '0')}`;
-      const timestamp = now.toISOString().split('T')[0];
+      const timestamp = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()}_${now.getHours().toString().padStart(2, '0')}h${now.getMinutes().toString().padStart(2, '0')}`;
       const fileName = `enderecos_geocodificados_${timestamp}.csv`;
       
-      // Busca ou cria a pasta "Endereços Geocodificados"
-      let mainFolder = await this.driveService.findFolderByName('Endereços Geocodificados');
-      if (!mainFolder) {
-        mainFolder = await this.driveService.createFolder('Endereços Geocodificados');
-      }
-
-      // Cria pasta com a data/hora da exportação
-      const dateSubFolder = await this.driveService.createFolder(dateFolder, mainFolder.id);
-
-      // Faz upload do arquivo CSV na pasta da data
-      const file = await this.driveService.uploadFile(
-        fileName,
-        csvOutput,
-        'text/csv',
-        dateSubFolder.id
-      );
-
-      // Compartilha com pegons.app@gmail.com
-      await this.driveService.shareFileWithEmail(file.id, 'pegons.app@gmail.com', 'writer');
-
-      this.successMessage.set('✅ Arquivo CSV enviado para o Google Drive com sucesso! Compartilhado com pegons.app@gmail.com');
+      // Converte CSV para File
+      const blob = new Blob([csvOutput], { type: 'text/csv' });
+      const csvFile = new File([blob], fileName, { type: 'text/csv' });
+      
+      // Upload para o Storage na pasta "enderecos_geocodificados"
+      await this.storageService.uploadFile(csvFile, 'enderecos_geocodificados');
+      
+      this.successMessage.set(`✅ Arquivo salvo no Firebase Storage com sucesso! (${successAddresses.length} endereços)`);
       setTimeout(() => this.successMessage.set(''), 5000);
     } catch (error: any) {
-      console.error('Erro ao enviar para Google Drive:', error);
-      this.errorMessage.set(`❌ Erro ao enviar para Google Drive: ${error.message || 'Erro desconhecido'}`);
+      console.error('Erro ao salvar no Storage:', error);
+      this.errorMessage.set(`❌ Erro ao salvar no Storage: ${error.message || 'Erro desconhecido'}`);
     } finally {
       this.isLoading.set(false);
+      this.loadingMessage.set('');
     }
   }
 
-  async exportToCSVByShift(): Promise<void> {
+  /**
+   * Salva os endereços geocodificados separados por turno no Firebase Storage
+   */
+  async saveToStorageByShift(): Promise<void> {
     const addresses = this.addresses();
     
     if (addresses.length === 0) {
-      this.errorMessage.set('Não há dados para exportar.');
+      this.errorMessage.set('Não há dados para salvar.');
       return;
     }
 
@@ -230,7 +220,7 @@ export class App {
     const successAddresses = addresses.filter(addr => addr.status === 'success');
     
     if (successAddresses.length === 0) {
-      this.errorMessage.set('Não há endereços geocodificados com sucesso para exportar.');
+      this.errorMessage.set('Não há endereços geocodificados com sucesso para salvar.');
       return;
     }
 
@@ -249,23 +239,15 @@ export class App {
         addressesByShift.get(turno)!.push(addr);
       });
 
-      // Busca ou cria a pasta "Endereços Geocodificados"
-      let mainFolder = await this.driveService.findFolderByName('Endereços Geocodificados');
-      if (!mainFolder) {
-        mainFolder = await this.driveService.createFolder('Endereços Geocodificados');
-      }
-
-      // Gera timestamp para nome da pasta e arquivos
+      // Gera timestamp para nome dos arquivos
       const now = new Date();
-      const dateFolder = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()}_${now.getHours().toString().padStart(2, '0')}h${now.getMinutes().toString().padStart(2, '0')}`;
-      const timestamp = now.toISOString().split('T')[0];
+      const timestamp = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()}_${now.getHours().toString().padStart(2, '0')}h${now.getMinutes().toString().padStart(2, '0')}`;
       
-      // Cria pasta com a data/hora da exportação
-      const dateSubFolder = await this.driveService.createFolder(dateFolder, mainFolder.id);
-      
-      let exportedCount = 0;
+      let savedCount = 0;
 
       for (const [turno, shiftAddresses] of addressesByShift.entries()) {
+        this.loadingMessage.set(`☁️ Salvando turno ${turno} no Firebase Storage...`);
+        
         // Prepara os dados para exportação
         const exportData = shiftAddresses.map(addr => ({
           'nome - endereco': `${addr.nome} - ${addr.endereco}`,
@@ -289,27 +271,24 @@ export class App {
         const turnoNormalizado = turno.toString().replace(/[^a-zA-Z0-9]/g, '_');
         const fileName = `enderecos_turno_${turnoNormalizado}_${timestamp}.csv`;
         
-        // Faz upload do arquivo CSV na pasta da data
-        const file = await this.driveService.uploadFile(
-          fileName,
-          csvOutput,
-          'text/csv',
-          dateSubFolder.id
-        );
-
-        // Compartilha com pegons.app@gmail.com
-        await this.driveService.shareFileWithEmail(file.id, 'pegons.app@gmail.com', 'writer');
+        // Converte CSV para File
+        const blob = new Blob([csvOutput], { type: 'text/csv' });
+        const csvFile = new File([blob], fileName, { type: 'text/csv' });
         
-        exportedCount++;
+        // Upload para o Storage na pasta "enderecos_geocodificados/por_turno"
+        await this.storageService.uploadFile(csvFile, 'enderecos_geocodificados/por_turno');
+        
+        savedCount++;
       }
       
-      this.successMessage.set(`✅ ${exportedCount} arquivo(s) CSV enviado(s) para o Google Drive com sucesso! Compartilhados com pegons.app@gmail.com`);
+      this.successMessage.set(`✅ ${savedCount} arquivo(s) salvos no Firebase Storage com sucesso!`);
       setTimeout(() => this.successMessage.set(''), 5000);
     } catch (error: any) {
-      console.error('Erro ao enviar para Google Drive:', error);
-      this.errorMessage.set(`❌ Erro ao enviar para Google Drive: ${error.message || 'Erro desconhecido'}`);
+      console.error('Erro ao salvar no Storage:', error);
+      this.errorMessage.set(`❌ Erro ao salvar no Storage: ${error.message || 'Erro desconhecido'}`);
     } finally {
       this.isLoading.set(false);
+      this.loadingMessage.set('');
     }
   }
 
@@ -338,105 +317,7 @@ export class App {
   }
 
   /**
-   * Toggle do dropdown do Drive
-   */
-  toggleDriveDropdown(): void {
-    this.driveDropdownOpen.set(!this.driveDropdownOpen());
-  }
-
-  /**
-   * Fecha o dropdown do Drive
-   */
-  closeDriveDropdown(): void {
-    this.driveDropdownOpen.set(false);
-  }
-
-  /**
-   * Troca a conta do Google para operações com o Drive
-   */
-  async switchGoogleAccount(): Promise<void> {
-    this.closeDriveDropdown();
-    try {
-      this.loadingMessage.set('🔄 Abrindo seletor de contas do Google...');
-      await this.driveService.switchAccount();
-      this.successMessage.set('✅ Conta do Google alterada com sucesso!');
-      setTimeout(() => this.successMessage.set(''), 3000);
-    } catch (error) {
-      console.error('Erro ao trocar conta:', error);
-      this.errorMessage.set('❌ Erro ao trocar de conta. Tente novamente.');
-      setTimeout(() => this.errorMessage.set(''), 5000);
-    } finally {
-      this.loadingMessage.set('');
-    }
-  }
-
-  /**
-   * Abre o modal para selecionar arquivo do Google Drive
-   */
-  async openDriveFilePicker(): Promise<void> {
-    this.driveFilesModalOpen.set(true);
-    this.loadingDriveFiles.set(true);
-    this.errorMessage.set('');
-
-    try {
-      // Autentica e lista arquivos
-      await this.driveService.authenticate();
-      const files = await this.driveService.listSpreadsheetFiles();
-      this.driveFiles.set(files);
-    } catch (error: any) {
-      console.error('Erro ao listar arquivos do Drive:', error);
-      this.errorMessage.set(`❌ Erro ao acessar Google Drive: ${error.message || 'Erro desconhecido'}`);
-      this.closeDriveFilePicker();
-    } finally {
-      this.loadingDriveFiles.set(false);
-    }
-  }
-
-  /**
-   * Fecha o modal de seleção de arquivos do Drive
-   */
-  closeDriveFilePicker(): void {
-    this.driveFilesModalOpen.set(false);
-    this.driveFiles.set([]);
-  }
-
-  /**
-   * Seleciona e processa um arquivo do Google Drive
-   */
-  async selectDriveFile(file: any): Promise<void> {
-    this.closeDriveFilePicker();
-    this.isLoading.set(true);
-    this.loadingMessage.set('📥 Baixando arquivo do Google Drive...');
-    this.errorMessage.set('');
-
-    try {
-      // Verifica se é Google Sheets ou XLSX
-      const isGoogleSheet = file.mimeType === 'application/vnd.google-apps.spreadsheet';
-      
-      let fileContent: ArrayBuffer;
-      
-      if (isGoogleSheet) {
-        // Exporta Google Sheets como XLSX
-        fileContent = await this.driveService.exportGoogleSheetAsXlsx(file.id);
-      } else {
-        // Baixa arquivo XLSX
-        fileContent = await this.driveService.downloadFile(file.id);
-      }
-
-      // Processa o arquivo
-      this.loadingMessage.set('📊 Processando planilha...');
-      this.processExcelData(fileContent);
-      
-    } catch (error: any) {
-      console.error('Erro ao processar arquivo do Drive:', error);
-      this.errorMessage.set(`❌ Erro ao processar arquivo: ${error.message || 'Erro desconhecido'}`);
-      this.isLoading.set(false);
-      this.loadingMessage.set('');
-    }
-  }
-
-  /**
-   * Processa dados do Excel (usado tanto para upload local quanto Drive)
+   * Processa dados do Excel
    */
   private processExcelData(data: ArrayBuffer | string): void {
     try {
