@@ -25,6 +25,9 @@ export class App {
   totalCount = signal(0);
   private currentRoute = signal('/');
   driveDropdownOpen = signal(false);
+  driveFilesModalOpen = signal(false);
+  driveFiles = signal<any[]>([]);
+  loadingDriveFiles = signal(false);
 
   constructor(
     private geocodeService: GoogleGeocodeService,
@@ -62,74 +65,9 @@ export class App {
     const reader = new FileReader();
     
     reader.onload = (e: ProgressEvent<FileReader>) => {
-      try {
-        const data = e.target?.result;
-        const workbook = XLSX.read(data, { type: 'binary' });
-        
-        // Pega a primeira planilha
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-        
-        // Converte para JSON
-        const jsonData: ExcelRow[] = XLSX.utils.sheet_to_json(worksheet);
-        
-        if (jsonData.length === 0) {
-          this.errorMessage.set('O arquivo Excel está vazio.');
-          this.isLoading.set(false);
-          return;
-        }
-
-        // Valida se tem as colunas necessárias
-        const firstRow = jsonData[0];
-        const keys = Object.keys(firstRow).map(k => k.toLowerCase().trim());
-        
-        const hasNome = keys.some(k => k === 'nome' || k === 'name');
-        const hasEndereco = keys.some(k => k === 'endereco' || k === 'endereço' || k === 'address');
-        const hasTurno = keys.some(k => k === 'turno' || k === 'shift' || k === 'periodo' || k === 'período');
-        
-        if (!hasNome || !hasEndereco || !hasTurno) {
-          const availableColumns = Object.keys(firstRow).join(', ');
-          this.errorMessage.set(`O arquivo deve conter as colunas: nome, endereco e turno. Colunas encontradas: ${availableColumns}`);
-          this.isLoading.set(false);
-          return;
-        }
-        
-        // Normaliza os nomes das colunas
-        const normalizedData: ExcelRow[] = jsonData.map(row => {
-          const normalized: any = {};
-          
-          for (const [key, value] of Object.entries(row)) {
-            const lowerKey = key.toLowerCase().trim();
-            
-            if (lowerKey === 'nome' || lowerKey === 'name') {
-              normalized.nome = value;
-            } else if (lowerKey === 'endereco' || lowerKey === 'endereço' || lowerKey === 'address') {
-              normalized.endereco = value;
-            } else if (lowerKey === 'turno' || lowerKey === 'shift' || lowerKey === 'periodo' || lowerKey === 'período') {
-              normalized.turno = value;
-            }
-          }
-          
-          return normalized as ExcelRow;
-        });
-
-        // Inicializa os endereços com dados normalizados
-        const addressesWithStatus: AddressWithCoordinates[] = normalizedData.map(row => ({
-          ...row,
-          status: 'pending' as const
-        }));
-        
-        this.addresses.set(addressesWithStatus);
-        this.totalCount.set(addressesWithStatus.length);
-        this.processedCount.set(0);
-        
-        // Inicia a geocodificação
-        this.geocodeAllAddresses();
-        
-      } catch (error) {
-        this.errorMessage.set('Erro ao ler o arquivo Excel. Verifique se o formato está correto.');
-        this.isLoading.set(false);
-        console.error('Erro ao processar Excel:', error);
+      const data = e.target?.result;
+      if (data) {
+        this.processExcelData(data);
       }
     };
 
@@ -225,6 +163,7 @@ export class App {
     try {
       // Prepara os dados para exportação
       const exportData = successAddresses.map(addr => ({
+        'nome - endereco': `${addr.nome} - ${addr.endereco}`,
         nome: addr.nome,
         endereco: addr.endereco,
         turno: addr.turno,
@@ -241,21 +180,27 @@ export class App {
       // Gera o arquivo CSV
       const csvOutput = XLSX.write(workbook, { bookType: 'csv', type: 'string' });
       
-      const timestamp = new Date().toISOString().split('T')[0];
+      // Gera timestamp para nome da pasta e arquivo
+      const now = new Date();
+      const dateFolder = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()}_${now.getHours().toString().padStart(2, '0')}h${now.getMinutes().toString().padStart(2, '0')}`;
+      const timestamp = now.toISOString().split('T')[0];
       const fileName = `enderecos_geocodificados_${timestamp}.csv`;
       
       // Busca ou cria a pasta "Endereços Geocodificados"
-      let folder = await this.driveService.findFolderByName('Endereços Geocodificados');
-      if (!folder) {
-        folder = await this.driveService.createFolder('Endereços Geocodificados');
+      let mainFolder = await this.driveService.findFolderByName('Endereços Geocodificados');
+      if (!mainFolder) {
+        mainFolder = await this.driveService.createFolder('Endereços Geocodificados');
       }
 
-      // Faz upload do arquivo CSV
+      // Cria pasta com a data/hora da exportação
+      const dateSubFolder = await this.driveService.createFolder(dateFolder, mainFolder.id);
+
+      // Faz upload do arquivo CSV na pasta da data
       const file = await this.driveService.uploadFile(
         fileName,
         csvOutput,
         'text/csv',
-        folder.id
+        dateSubFolder.id
       );
 
       // Compartilha com pegons.app@gmail.com
@@ -303,18 +248,25 @@ export class App {
       });
 
       // Busca ou cria a pasta "Endereços Geocodificados"
-      let folder = await this.driveService.findFolderByName('Endereços Geocodificados');
-      if (!folder) {
-        folder = await this.driveService.createFolder('Endereços Geocodificados');
+      let mainFolder = await this.driveService.findFolderByName('Endereços Geocodificados');
+      if (!mainFolder) {
+        mainFolder = await this.driveService.createFolder('Endereços Geocodificados');
       }
 
-      // Gera um arquivo CSV para cada turno
-      const timestamp = new Date().toISOString().split('T')[0];
+      // Gera timestamp para nome da pasta e arquivos
+      const now = new Date();
+      const dateFolder = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()}_${now.getHours().toString().padStart(2, '0')}h${now.getMinutes().toString().padStart(2, '0')}`;
+      const timestamp = now.toISOString().split('T')[0];
+      
+      // Cria pasta com a data/hora da exportação
+      const dateSubFolder = await this.driveService.createFolder(dateFolder, mainFolder.id);
+      
       let exportedCount = 0;
 
       for (const [turno, shiftAddresses] of addressesByShift.entries()) {
         // Prepara os dados para exportação
         const exportData = shiftAddresses.map(addr => ({
+          'nome - endereco': `${addr.nome} - ${addr.endereco}`,
           nome: addr.nome,
           endereco: addr.endereco,
           turno: addr.turno,
@@ -335,12 +287,12 @@ export class App {
         const turnoNormalizado = turno.toString().replace(/[^a-zA-Z0-9]/g, '_');
         const fileName = `enderecos_turno_${turnoNormalizado}_${timestamp}.csv`;
         
-        // Faz upload do arquivo CSV
+        // Faz upload do arquivo CSV na pasta da data
         const file = await this.driveService.uploadFile(
           fileName,
           csvOutput,
           'text/csv',
-          folder.id
+          dateSubFolder.id
         );
 
         // Compartilha com pegons.app@gmail.com
@@ -413,6 +365,146 @@ export class App {
       setTimeout(() => this.errorMessage.set(''), 5000);
     } finally {
       this.loadingMessage.set('');
+    }
+  }
+
+  /**
+   * Abre o modal para selecionar arquivo do Google Drive
+   */
+  async openDriveFilePicker(): Promise<void> {
+    this.driveFilesModalOpen.set(true);
+    this.loadingDriveFiles.set(true);
+    this.errorMessage.set('');
+
+    try {
+      // Autentica e lista arquivos
+      await this.driveService.authenticate();
+      const files = await this.driveService.listSpreadsheetFiles();
+      this.driveFiles.set(files);
+    } catch (error: any) {
+      console.error('Erro ao listar arquivos do Drive:', error);
+      this.errorMessage.set(`❌ Erro ao acessar Google Drive: ${error.message || 'Erro desconhecido'}`);
+      this.closeDriveFilePicker();
+    } finally {
+      this.loadingDriveFiles.set(false);
+    }
+  }
+
+  /**
+   * Fecha o modal de seleção de arquivos do Drive
+   */
+  closeDriveFilePicker(): void {
+    this.driveFilesModalOpen.set(false);
+    this.driveFiles.set([]);
+  }
+
+  /**
+   * Seleciona e processa um arquivo do Google Drive
+   */
+  async selectDriveFile(file: any): Promise<void> {
+    this.closeDriveFilePicker();
+    this.isLoading.set(true);
+    this.loadingMessage.set('📥 Baixando arquivo do Google Drive...');
+    this.errorMessage.set('');
+
+    try {
+      // Verifica se é Google Sheets ou XLSX
+      const isGoogleSheet = file.mimeType === 'application/vnd.google-apps.spreadsheet';
+      
+      let fileContent: ArrayBuffer;
+      
+      if (isGoogleSheet) {
+        // Exporta Google Sheets como XLSX
+        fileContent = await this.driveService.exportGoogleSheetAsXlsx(file.id);
+      } else {
+        // Baixa arquivo XLSX
+        fileContent = await this.driveService.downloadFile(file.id);
+      }
+
+      // Processa o arquivo
+      this.loadingMessage.set('📊 Processando planilha...');
+      this.processExcelData(fileContent);
+      
+    } catch (error: any) {
+      console.error('Erro ao processar arquivo do Drive:', error);
+      this.errorMessage.set(`❌ Erro ao processar arquivo: ${error.message || 'Erro desconhecido'}`);
+      this.isLoading.set(false);
+      this.loadingMessage.set('');
+    }
+  }
+
+  /**
+   * Processa dados do Excel (usado tanto para upload local quanto Drive)
+   */
+  private processExcelData(data: ArrayBuffer | string): void {
+    try {
+      const workbook = XLSX.read(data, { type: data instanceof ArrayBuffer ? 'array' : 'binary' });
+      
+      // Pega a primeira planilha
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      
+      // Converte para JSON
+      const jsonData: ExcelRow[] = XLSX.utils.sheet_to_json(worksheet);
+      
+      if (jsonData.length === 0) {
+        this.errorMessage.set('O arquivo Excel está vazio.');
+        this.isLoading.set(false);
+        return;
+      }
+
+      // Valida se tem as colunas necessárias
+      const firstRow = jsonData[0];
+      const keys = Object.keys(firstRow).map(k => k.toLowerCase().trim());
+      
+      const hasNome = keys.some(k => k === 'nome' || k === 'name');
+      const hasEndereco = keys.some(k => k === 'endereco' || k === 'endereço' || k === 'address');
+      const hasTurno = keys.some(k => k === 'turno' || k === 'shift' || k === 'periodo' || k === 'período');
+      
+      if (!hasNome || !hasEndereco || !hasTurno) {
+        const availableColumns = Object.keys(firstRow).join(', ');
+        this.errorMessage.set(`O arquivo deve conter as colunas: nome, endereco e turno. Colunas encontradas: ${availableColumns}`);
+        this.isLoading.set(false);
+        return;
+      }
+      
+      // Normaliza os nomes das colunas
+      const normalizedData: ExcelRow[] = jsonData.map(row => {
+        const normalized: any = {};
+        
+        for (const [key, value] of Object.entries(row)) {
+          const lowerKey = key.toLowerCase().trim();
+          
+          if (lowerKey === 'nome' || lowerKey === 'name') {
+            normalized.nome = value;
+          } else if (lowerKey === 'endereco' || lowerKey === 'endereço' || lowerKey === 'address') {
+            normalized.endereco = value;
+          } else if (lowerKey === 'turno' || lowerKey === 'shift' || lowerKey === 'periodo' || lowerKey === 'período') {
+            normalized.turno = value;
+          }
+        }
+        
+        return normalized as ExcelRow;
+      });
+
+      // Inicializa os endereços com dados normalizados
+      const addressesWithStatus: AddressWithCoordinates[] = normalizedData.map(row => ({
+        ...row,
+        status: 'pending' as const
+      }));
+      
+      this.addresses.set(addressesWithStatus);
+      this.totalCount.set(addressesWithStatus.length);
+      this.processedCount.set(0);
+      
+      // Inicia a geocodificação
+      this.geocodeAllAddresses();
+      
+    } catch (error) {
+      this.errorMessage.set('Erro ao ler o arquivo Excel. Verifique se o formato está correto.');
+      this.isLoading.set(false);
+      this.loadingMessage.set('');
+      console.error('Erro ao processar Excel:', error);
     }
   }
 }

@@ -311,4 +311,91 @@ export class GoogleDriveService {
     this.accessToken = null;
     this.tokenExpiry = null;
   }
+
+  /**
+   * Lista arquivos de planilha (XLSX e Google Sheets) do Google Drive
+   */
+  async listSpreadsheetFiles(): Promise<any[]> {
+    try {
+      const accessToken = await this.authenticate();
+
+      const query = "(mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' or mimeType='application/vnd.google-apps.spreadsheet') and trashed=false";
+      
+      const response = await fetch(
+        `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,mimeType,modifiedTime,iconLink)&orderBy=modifiedTime desc&pageSize=50`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Erro ao listar arquivos: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.files || [];
+    } catch (error) {
+      console.error('Erro ao listar arquivos do Google Drive:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Baixa um arquivo do Google Drive
+   */
+  async downloadFile(fileId: string): Promise<ArrayBuffer> {
+    try {
+      const accessToken = await this.authenticate();
+
+      const response = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Erro ao baixar arquivo: ${response.statusText}`);
+      }
+
+      return await response.arrayBuffer();
+    } catch (error) {
+      console.error('Erro ao baixar arquivo do Google Drive:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Exporta uma planilha do Google Sheets como XLSX
+   */
+  async exportGoogleSheetAsXlsx(fileId: string): Promise<ArrayBuffer> {
+    try {
+      const accessToken = await this.authenticate();
+
+      const response = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Erro ao exportar Google Sheets: ${response.statusText}`);
+      }
+
+      return await response.arrayBuffer();
+    } catch (error) {
+      console.error('Erro ao exportar Google Sheets:', error);
+      throw error;
+    }
+  }
 }
