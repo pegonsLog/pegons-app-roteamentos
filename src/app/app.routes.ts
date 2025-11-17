@@ -4,6 +4,7 @@ import { RotasComponent } from './components/rotas/rotas.component';
 import { KmlUploadComponent } from './components/kml-upload/kml-upload.component';
 import { GerenciarDados } from './components/gerenciar-dados/gerenciar-dados';
 import { StorageViewerComponent } from './components/storage-viewer/storage-viewer.component';
+import { ListaAtendimento } from './components/lista-atendimento/lista-atendimento';
 
 export const routes: Routes = [
   { path: 'mapas', component: ListaMapasComponent },
@@ -11,5 +12,6 @@ export const routes: Routes = [
   { path: 'kml-upload', component: KmlUploadComponent },
   { path: 'gerenciar-dados', component: GerenciarDados },
   { path: 'storage', component: StorageViewerComponent },
+  { path: 'lista-atendimento', component: ListaAtendimento },
   { path: '', redirectTo: '', pathMatch: 'full' }
 ];
