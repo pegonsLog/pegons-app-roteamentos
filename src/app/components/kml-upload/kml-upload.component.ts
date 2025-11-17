@@ -122,9 +122,14 @@ export class KmlUploadComponent {
           if (dataName === 'endereco') {
             endereco = value;
           } else if (dataName === 'turno') {
-            // Remove decimal do turno (converte 1.0 para 1)
-            const turnoNum = parseFloat(value);
-            turno = isNaN(turnoNum) ? value : Math.floor(turnoNum).toString();
+            // Normaliza o turno: se for número (1, 2, 3), converte para Turno1, Turno2, Turno3
+            let turnoValue = value.trim();
+            if (/^\d+$/.test(turnoValue)) {
+              turnoValue = `Turno${turnoValue}`;
+            } else if (turnoValue.toLowerCase() === 'adm') {
+              turnoValue = 'TurnoAdm';
+            }
+            turno = turnoValue;
           }
         }
       }

@@ -2,6 +2,7 @@ export interface ExcelRow {
   nome: string;
   endereco: string;
   turno: string;
+  nivelAtendimento?: string;
 }
 
 export interface AddressWithCoordinates extends ExcelRow {

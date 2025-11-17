@@ -18,6 +18,15 @@ export class StorageViewerComponent implements OnInit {
   error: string = '';
   selectedFile: File | null = null;
   uploading: boolean = false;
+  successMessage: string = '';
+  
+  // Modal de confirmação de delete
+  showDeleteModal: boolean = false;
+  fileToDelete: StorageFile | null = null;
+  
+  // Modal de confirmação de delete pasta
+  showDeleteFolderModal: boolean = false;
+  folderToDelete: StorageFolder | null = null;
 
   constructor(private storageService: FirebaseStorageService) {}
 
@@ -87,7 +96,7 @@ export class StorageViewerComponent implements OnInit {
    */
   async uploadFile(): Promise<void> {
     if (!this.selectedFile) {
-      alert('Por favor, selecione um arquivo primeiro');
+      this.error = 'Por favor, selecione um arquivo primeiro';
       return;
     }
 
@@ -96,7 +105,7 @@ export class StorageViewerComponent implements OnInit {
 
     try {
       await this.storageService.uploadFile(this.selectedFile, this.currentPath);
-      alert('Arquivo enviado com sucesso!');
+      this.successMessage = '✅ Arquivo enviado com sucesso!';
       this.selectedFile = null;
       
       // Limpa o input
@@ -107,6 +116,7 @@ export class StorageViewerComponent implements OnInit {
       
       // Recarrega a lista
       await this.loadFiles();
+      setTimeout(() => this.successMessage = '', 3000);
     } catch (error: any) {
       this.error = 'Erro ao fazer upload: ' + (error.message || 'Erro desconhecido');
       console.error(error);
@@ -116,20 +126,40 @@ export class StorageViewerComponent implements OnInit {
   }
 
   /**
-   * Deleta um arquivo
+   * Abre o modal de confirmação de delete
    */
-  async deleteFile(file: StorageFile): Promise<void> {
-    if (!confirm(`Tem certeza que deseja deletar o arquivo "${file.name}"?`)) {
-      return;
-    }
+  openDeleteModal(file: StorageFile): void {
+    this.fileToDelete = file;
+    this.showDeleteModal = true;
+  }
 
+  /**
+   * Fecha o modal de confirmação de delete
+   */
+  closeDeleteModal(): void {
+    this.showDeleteModal = false;
+    this.fileToDelete = null;
+  }
+
+  /**
+   * Confirma e deleta o arquivo
+   */
+  async confirmDelete(): Promise<void> {
+    if (!this.fileToDelete) return;
+
+    // Salva as informações antes de fechar o modal
+    const fileName = this.fileToDelete.name;
+    const filePath = this.fileToDelete.fullPath;
+    
     this.loading = true;
     this.error = '';
+    this.closeDeleteModal();
 
     try {
-      await this.storageService.deleteFile(file.fullPath);
-      alert('Arquivo deletado com sucesso!');
+      await this.storageService.deleteFile(filePath);
+      this.successMessage = `✅ Arquivo "${fileName}" deletado com sucesso!`;
       await this.loadFiles();
+      setTimeout(() => this.successMessage = '', 3000);
     } catch (error: any) {
       this.error = 'Erro ao deletar arquivo: ' + (error.message || 'Erro desconhecido');
       console.error(error);
@@ -192,5 +222,47 @@ export class StorageViewerComponent implements OnInit {
    */
   isImage(contentType: string): boolean {
     return contentType.includes('image');
+  }
+
+  /**
+   * Abre o modal de confirmação para deletar pasta
+   */
+  openDeleteFolderModal(folder: StorageFolder): void {
+    this.folderToDelete = folder;
+    this.showDeleteFolderModal = true;
+  }
+
+  /**
+   * Fecha o modal de confirmação de delete pasta
+   */
+  closeDeleteFolderModal(): void {
+    this.showDeleteFolderModal = false;
+    this.folderToDelete = null;
+  }
+
+  /**
+   * Confirma e deleta a pasta
+   */
+  async confirmDeleteFolder(): Promise<void> {
+    if (!this.folderToDelete) return;
+
+    const folderName = this.folderToDelete.name;
+    const folderPath = this.folderToDelete.fullPath;
+    
+    this.loading = true;
+    this.error = '';
+    this.closeDeleteFolderModal();
+
+    try {
+      const result = await this.storageService.deleteFolder(folderPath);
+      this.successMessage = `✅ Pasta "${folderName}" deletada com sucesso! (${result.deletedCount} arquivo(s) removido(s))`;
+      await this.loadFiles();
+      setTimeout(() => this.successMessage = '', 5000);
+    } catch (error: any) {
+      this.error = 'Erro ao deletar pasta: ' + (error.message || 'Erro desconhecido');
+      console.error(error);
+    } finally {
+      this.loading = false;
+    }
   }
 }

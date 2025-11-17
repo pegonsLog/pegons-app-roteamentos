@@ -26,6 +26,12 @@ export class App {
   totalCount = signal(0);
   private currentRoute = signal('/');
 
+  // Modais de confirmação
+  showFirestoreModal = signal(false);
+  showStorageModal = signal(false);
+  showStorageByShiftModal = signal(false);
+  pendingSaveData = signal<{count: number, turnos?: string[]}>({count: 0});
+
   constructor(
     private geocodeService: GoogleGeocodeService,
     private firestoreService: FirestoreDataService,
@@ -140,9 +146,9 @@ export class App {
   }
 
   /**
-   * Salva todos os endereços geocodificados no Firebase Storage
+   * Abre modal de confirmação para salvar no Storage
    */
-  async saveToStorage(): Promise<void> {
+  openStorageModal(): void {
     const addresses = this.addresses();
     
     if (addresses.length === 0) {
@@ -150,13 +156,28 @@ export class App {
       return;
     }
 
-    // Filtra apenas endereços geocodificados com sucesso
     const successAddresses = addresses.filter(addr => addr.status === 'success');
     
     if (successAddresses.length === 0) {
       this.errorMessage.set('Não há endereços geocodificados com sucesso para salvar.');
       return;
     }
+
+    this.pendingSaveData.set({count: successAddresses.length});
+    this.showStorageModal.set(true);
+  }
+
+  closeStorageModal(): void {
+    this.showStorageModal.set(false);
+  }
+
+  /**
+   * Salva todos os endereços geocodificados no Firebase Storage
+   */
+  async confirmSaveToStorage(): Promise<void> {
+    this.closeStorageModal();
+    const addresses = this.addresses();
+    const successAddresses = addresses.filter(addr => addr.status === 'success');
 
     this.isLoading.set(true);
     this.loadingMessage.set('☁️ Salvando no Firebase Storage...');
@@ -169,6 +190,7 @@ export class App {
         nome: addr.nome,
         endereco: addr.endereco,
         turno: addr.turno,
+        nivelAtendimento: addr.nivelAtendimento ?? 'N/A',
         latitude: addr.latitude ?? 'N/A',
         longitude: addr.longitude ?? 'N/A',
         status: 'Sucesso'
@@ -206,9 +228,9 @@ export class App {
   }
 
   /**
-   * Salva os endereços geocodificados separados por turno no Firebase Storage
+   * Abre modal de confirmação para salvar no Storage por turno
    */
-  async saveToStorageByShift(): Promise<void> {
+  openStorageByShiftModal(): void {
     const addresses = this.addresses();
     
     if (addresses.length === 0) {
@@ -216,13 +238,29 @@ export class App {
       return;
     }
 
-    // Filtra apenas endereços geocodificados com sucesso
     const successAddresses = addresses.filter(addr => addr.status === 'success');
     
     if (successAddresses.length === 0) {
       this.errorMessage.set('Não há endereços geocodificados com sucesso para salvar.');
       return;
     }
+
+    const turnos = this.getUniqueTurnos();
+    this.pendingSaveData.set({count: successAddresses.length, turnos});
+    this.showStorageByShiftModal.set(true);
+  }
+
+  closeStorageByShiftModal(): void {
+    this.showStorageByShiftModal.set(false);
+  }
+
+  /**
+   * Salva os endereços geocodificados separados por turno no Firebase Storage
+   */
+  async confirmSaveToStorageByShift(): Promise<void> {
+    this.closeStorageByShiftModal();
+    const addresses = this.addresses();
+    const successAddresses = addresses.filter(addr => addr.status === 'success');
 
     this.isLoading.set(true);
     this.errorMessage.set('');
@@ -254,6 +292,7 @@ export class App {
           nome: addr.nome,
           endereco: addr.endereco,
           turno: addr.turno,
+          nivelAtendimento: addr.nivelAtendimento ?? 'N/A',
           latitude: addr.latitude ?? 'N/A',
           longitude: addr.longitude ?? 'N/A',
           status: 'Sucesso'
@@ -363,7 +402,22 @@ export class App {
           } else if (lowerKey === 'endereco' || lowerKey === 'endereço' || lowerKey === 'address') {
             normalized.endereco = value;
           } else if (lowerKey === 'turno' || lowerKey === 'shift' || lowerKey === 'periodo' || lowerKey === 'período') {
-            normalized.turno = value;
+            // Normaliza o turno: se for número (1, 2, 3), converte para Turno1, Turno2, Turno3
+            // Se for "Adm" ou "adm", converte para TurnoAdm
+            let turnoValue = String(value).trim();
+            
+            // Se for um número, adiciona o prefixo "Turno"
+            if (/^\d+$/.test(turnoValue)) {
+              turnoValue = `Turno${turnoValue}`;
+            } else if (turnoValue.toLowerCase() === 'adm') {
+              turnoValue = 'TurnoAdm';
+            }
+            // Se já estiver no formato correto (Turno1, Turno2, etc), mantém
+            
+            normalized.turno = turnoValue;
+          } else if (lowerKey === 'nivelatendimento' || lowerKey === 'nivel' || lowerKey === 'nivel de atendimento') {
+            // Captura o nível de atendimento (campo opcional)
+            normalized.nivelAtendimento = value ? String(value).trim() : undefined;
           }
         }
         
@@ -392,9 +446,9 @@ export class App {
   }
 
   /**
-   * Salva os endereços geocodificados no Firestore
+   * Abre modal de confirmação para salvar no Firestore
    */
-  async saveToFirestore(): Promise<void> {
+  openFirestoreModal(): void {
     const addresses = this.addresses();
     
     if (addresses.length === 0) {
@@ -402,7 +456,6 @@ export class App {
       return;
     }
 
-    // Filtra apenas endereços geocodificados com sucesso
     const successAddresses = addresses.filter(addr => addr.status === 'success');
     
     if (successAddresses.length === 0) {
@@ -410,9 +463,22 @@ export class App {
       return;
     }
 
-    if (!confirm(`Deseja salvar ${successAddresses.length} endereço(s) no Firestore? Os dados serão organizados por turno.`)) {
-      return;
-    }
+    const turnos = this.getUniqueTurnos();
+    this.pendingSaveData.set({count: successAddresses.length, turnos});
+    this.showFirestoreModal.set(true);
+  }
+
+  closeFirestoreModal(): void {
+    this.showFirestoreModal.set(false);
+  }
+
+  /**
+   * Salva os endereços geocodificados no Firestore
+   */
+  async confirmSaveToFirestore(): Promise<void> {
+    this.closeFirestoreModal();
+    const addresses = this.addresses();
+    const successAddresses = addresses.filter(addr => addr.status === 'success');
 
     this.isLoading.set(true);
     this.errorMessage.set('');

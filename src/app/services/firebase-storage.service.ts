@@ -101,6 +101,39 @@ export class FirebaseStorageService {
   }
 
   /**
+   * Deleta uma pasta inteira recursivamente (todos os arquivos e subpastas)
+   */
+  async deleteFolder(folderPath: string): Promise<{ deletedCount: number }> {
+    try {
+      const storageRef = ref(this.storage, folderPath);
+      const result = await listAll(storageRef);
+      
+      let deletedCount = 0;
+      
+      // Deleta todos os arquivos na pasta
+      const deleteFilesPromises = result.items.map(async (itemRef) => {
+        await deleteObject(itemRef);
+        deletedCount++;
+      });
+      
+      await Promise.all(deleteFilesPromises);
+      
+      // Deleta recursivamente todas as subpastas
+      const deleteFoldersPromises = result.prefixes.map(async (prefixRef) => {
+        const subResult = await this.deleteFolder(prefixRef.fullPath);
+        deletedCount += subResult.deletedCount;
+      });
+      
+      await Promise.all(deleteFoldersPromises);
+      
+      return { deletedCount };
+    } catch (error) {
+      console.error('Erro ao deletar pasta:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Obtém a URL de download de um arquivo
    */
   async getDownloadURL(fullPath: string): Promise<string> {

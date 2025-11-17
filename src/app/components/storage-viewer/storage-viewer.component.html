@@ -87,6 +87,13 @@
         {{ error }}
       </div>
 
+      <!-- Mensagem de sucesso -->
+      <div class="alert alert-success alert-dismissible fade show" *ngIf="successMessage">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        {{ successMessage }}
+        <button type="button" class="btn-close" (click)="successMessage = ''"></button>
+      </div>
+
       <!-- Loading -->
       <div class="text-center py-5" *ngIf="loading">
         <div class="spinner-border text-primary" role="status">
@@ -105,11 +112,20 @@
           </h6>
           <div class="row g-3">
             <div class="col-md-6 col-lg-4 col-xl-3" *ngFor="let folder of folders">
-              <div class="folder-card" (click)="navigateToFolder(folder)">
-                <div class="folder-icon">
-                  <i class="bi bi-folder-fill"></i>
+              <div class="folder-card position-relative">
+                <button 
+                  class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2" 
+                  (click)="openDeleteFolderModal(folder); $event.stopPropagation()"
+                  title="Deletar pasta"
+                  style="z-index: 10;">
+                  <i class="bi bi-trash"></i>
+                </button>
+                <div (click)="navigateToFolder(folder)" style="cursor: pointer;">
+                  <div class="folder-icon">
+                    <i class="bi bi-folder-fill"></i>
+                  </div>
+                  <div class="folder-name">{{ folder.name }}</div>
                 </div>
-                <div class="folder-name">{{ folder.name }}</div>
               </div>
             </div>
           </div>
@@ -163,7 +179,7 @@
                       </button>
                       <button 
                         class="btn btn-outline-danger" 
-                        (click)="deleteFile(file)"
+                        (click)="openDeleteModal(file)"
                         title="Deletar">
                         <i class="bi bi-trash"></i>
                       </button>
@@ -180,6 +196,79 @@
           <i class="bi bi-inbox display-1 text-muted"></i>
           <p class="mt-3 text-muted">Nenhum arquivo ou pasta encontrado neste diretório</p>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Confirmação de Delete -->
+<div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" *ngIf="showDeleteModal">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-exclamation-triangle me-2"></i>Confirmar Deleção
+        </h5>
+        <button type="button" class="btn-close btn-close-white" (click)="closeDeleteModal()"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-0">
+          Tem certeza que deseja deletar o arquivo <strong>"{{ fileToDelete?.name }}"</strong>?
+        </p>
+        <p class="text-muted small mb-0 mt-2">
+          Esta ação não pode ser desfeita.
+        </p>
+        <div class="mt-3" *ngIf="fileToDelete">
+          <small class="text-muted">
+            <strong>Caminho:</strong> {{ fileToDelete.fullPath }}<br>
+            <strong>Tamanho:</strong> {{ formatSize(fileToDelete.size) }}<br>
+            <strong>Tipo:</strong> {{ fileToDelete.contentType }}
+          </small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeDeleteModal()">
+          <i class="bi bi-x-circle me-2"></i>Cancelar
+        </button>
+        <button type="button" class="btn btn-danger" (click)="confirmDelete()">
+          <i class="bi bi-trash me-2"></i>Deletar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Confirmação de Delete Pasta -->
+<div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" *ngIf="showDeleteFolderModal">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-exclamation-triangle me-2"></i>Confirmar Deleção de Pasta
+        </h5>
+        <button type="button" class="btn-close btn-close-white" (click)="closeDeleteFolderModal()"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-2">
+          Tem certeza que deseja deletar a pasta <strong>"{{ folderToDelete?.name }}"</strong>?
+        </p>
+        <div class="alert alert-warning mb-0">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          <strong>Atenção:</strong> Esta ação irá deletar <strong>TODOS os arquivos e subpastas</strong> dentro desta pasta e não pode ser desfeita!
+        </div>
+        <div class="mt-3" *ngIf="folderToDelete">
+          <small class="text-muted">
+            <strong>Caminho:</strong> {{ folderToDelete.fullPath }}
+          </small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeDeleteFolderModal()">
+          <i class="bi bi-x-circle me-2"></i>Cancelar
+        </button>
+        <button type="button" class="btn btn-danger" (click)="confirmDeleteFolder()">
+          <i class="bi bi-trash me-2"></i>Deletar Pasta
+        </button>
       </div>
     </div>
   </div>

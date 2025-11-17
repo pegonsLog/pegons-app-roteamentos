@@ -20,6 +20,7 @@ export interface FirestoreAddress {
   nome: string;
   endereco: string;
   turno: string;
+  nivelAtendimento?: string;
   latitude?: number;
   longitude?: number;
   status: 'pending' | 'success' | 'error';
@@ -78,6 +79,9 @@ export class FirestoreDataService {
         if (addr.errorMessage) {
           data.errorMessage = addr.errorMessage;
         }
+        if (addr.nivelAtendimento) {
+          data.nivelAtendimento = addr.nivelAtendimento;
+        }
         
         batch.set(docRef, data);
       }
@@ -106,7 +110,7 @@ export class FirestoreDataService {
   async getAllShifts(): Promise<string[]> {
     // Retorna lista de turnos padrão que correspondem aos nomes das coleções
     // Os nomes aqui devem ser os mesmos que aparecem na coluna "turno" da planilha
-    const knownShifts = ['1', '2', '3', 'Adm'];
+    const knownShifts = ['Turno1', 'Turno2', 'Turno3', 'TurnoAdm'];
     return knownShifts;
   }
 

@@ -37,22 +37,6 @@
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link nav-link-modern" routerLink="/rotas" routerLinkActive="active">
-            <div class="nav-icon-wrapper">
-              <i class="bi bi-signpost-2-fill"></i>
-            </div>
-            <span>Calcular Rotas</span>
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link nav-link-modern" routerLink="/kml-upload" routerLinkActive="active">
-            <div class="nav-icon-wrapper">
-              <i class="bi bi-file-earmark-arrow-up-fill"></i>
-            </div>
-            <span>Upload KML</span>
-          </a>
-        </li>
-        <li class="nav-item">
           <a class="nav-link nav-link-modern" routerLink="/gerenciar-dados" routerLinkActive="active">
             <div class="nav-icon-wrapper">
               <i class="bi bi-database-fill"></i>
@@ -68,6 +52,22 @@
             <span>Arquivos Storage</span>
           </a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link nav-link-modern" routerLink="/rotas" routerLinkActive="active">
+            <div class="nav-icon-wrapper">
+              <i class="bi bi-signpost-2-fill"></i>
+            </div>
+            <span>Calcular Rotas</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-link-modern" routerLink="/kml-upload" routerLinkActive="active">
+            <div class="nav-icon-wrapper">
+              <i class="bi bi-file-earmark-arrow-up-fill"></i>
+            </div>
+            <span>Upload KML</span>
+          </a>
+        </li>        
       </ul>
     </div>
   </div>
@@ -171,20 +171,20 @@
         <!-- Botões de Ação -->
         <div class="d-flex flex-wrap gap-2 mb-3">
           <button 
-            class="btn btn-warning" 
-            (click)="saveToFirestore()"
+            class="btn btn-info" 
+            (click)="openFirestoreModal()"
             [disabled]="isLoading()">
             <i class="bi bi-database-fill-add me-2"></i>Salvar no Firestore
           </button>
           <button 
             class="btn btn-success" 
-            (click)="saveToStorage()"
+            (click)="openStorageModal()"
             [disabled]="isLoading()">
             <i class="bi bi-cloud-arrow-up-fill me-2"></i>Salvar no Storage (Todos)
           </button>
           <button 
             class="btn btn-primary" 
-            (click)="saveToStorageByShift()"
+            (click)="openStorageByShiftModal()"
             [disabled]="isLoading()">
             <i class="bi bi-cloud-upload-fill me-2"></i>Salvar por Turno
           </button>       
@@ -219,6 +219,7 @@
                 <th scope="col">Nome</th>
                 <th scope="col">Endereço</th>
                 <th scope="col">Turno</th>
+                <th scope="col">N. Atend.</th>
                 <th scope="col">Latitude</th>
                 <th scope="col">Longitude</th>
                 <th scope="col">Status</th>
@@ -231,6 +232,13 @@
                   <td>{{ address.nome }}</td>
                   <td>{{ address.endereco }}</td>
                   <td>{{ address.turno }}</td>
+                  <td>
+                    @if (address.nivelAtendimento) {
+                      <span class="badge bg-secondary">{{ address.nivelAtendimento }}</span>
+                    } @else {
+                      <span class="text-muted">-</span>
+                    }
+                  </td>
                   <td>
                     @if (address.latitude) {
                       <span class="badge bg-info">{{ address.latitude }}</span>
@@ -280,73 +288,93 @@
       </div>
       <div class="card-body">
         <p class="text-muted mb-3">
-          Sua planilha deve conter <strong>3 colunas obrigatórias</strong> com os seguintes nomes (não diferencia maiúsculas/minúsculas):
+          Sua planilha deve conter <strong>3 colunas obrigatórias</strong> e <strong>1 coluna opcional</strong> com os seguintes nomes (não diferencia maiúsculas/minúsculas):
         </p>
         
         <div class="row g-3 mb-4">
           <!-- Coluna Nome -->
-          <div class="col-md-4">
+          <div class="col-md-3">
             <div class="card h-100 border-success">
-              <div class="card-body">
-                <h6 class="card-title text-success">
-                  <i class="bi bi-person-fill me-2"></i>Nome
+              <div class="card-body p-2">
+                <h6 class="card-title text-success mb-2" style="font-size: 0.9rem;">
+                  <i class="bi bi-person-fill me-1"></i>Nome
                 </h6>
-                <p class="card-text small mb-2">
-                  <strong>Aceita:</strong> <code>nome</code> ou <code>name</code>
+                <p class="card-text mb-1" style="font-size: 0.75rem;">
+                  <strong>Aceita:</strong> <code style="font-size: 0.7rem;">nome</code> ou <code style="font-size: 0.7rem;">name</code>
                 </p>
-                <p class="card-text small text-muted mb-0">
-                  Nome completo da pessoa ou identificação do local
+                <p class="card-text text-muted mb-0" style="font-size: 0.7rem;">
+                  Nome completo da pessoa
                 </p>
-                <div class="mt-2 p-2 bg-light rounded">
-                  <small class="text-muted d-block"><strong>Exemplo:</strong></small>
-                  <small class="d-block">João Silva</small>
-                  <small class="d-block">Maria Santos</small>
+                <div class="mt-2 p-1 bg-light rounded">
+                  <small class="text-muted d-block" style="font-size: 0.65rem;"><strong>Exemplo:</strong></small>
+                  <small class="d-block" style="font-size: 0.65rem;">João Silva</small>
+                  <small class="d-block" style="font-size: 0.65rem;">Maria Santos</small>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Coluna Endereço -->
-          <div class="col-md-4">
+          <div class="col-md-3">
             <div class="card h-100 border-info">
-              <div class="card-body">
-                <h6 class="card-title text-info">
-                  <i class="bi bi-geo-alt-fill me-2"></i>Endereço
+              <div class="card-body p-2">
+                <h6 class="card-title text-info mb-2" style="font-size: 0.9rem;">
+                  <i class="bi bi-geo-alt-fill me-1"></i>Endereço
                 </h6>
-                <p class="card-text small mb-2">
-                  <strong>Aceita:</strong> <code>endereco</code>, <code>endereço</code> ou <code>address</code>
+                <p class="card-text mb-1" style="font-size: 0.75rem;">
+                  <strong>Aceita:</strong> <code style="font-size: 0.7rem;">endereco</code> ou <code style="font-size: 0.7rem;">address</code>
                 </p>
-                <p class="card-text small text-muted mb-0">
-                  Endereço completo com rua, número e bairro
+                <p class="card-text text-muted mb-0" style="font-size: 0.7rem;">
+                  Endereço completo
                 </p>
-                <div class="mt-2 p-2 bg-light rounded">
-                  <small class="text-muted d-block"><strong>Exemplo:</strong></small>
-                  <small class="d-block">Rua das Flores, 123, Centro</small>
-                  <small class="d-block">Av. Brasil, 456, Savassi</small>
+                <div class="mt-2 p-1 bg-light rounded">
+                  <small class="text-muted d-block" style="font-size: 0.65rem;"><strong>Exemplo:</strong></small>
+                  <small class="d-block" style="font-size: 0.65rem;">Rua das Flores, 123</small>
+                  <small class="d-block" style="font-size: 0.65rem;">Av. Brasil, 456</small>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Coluna Turno -->
-          <div class="col-md-4">
+          <div class="col-md-3">
             <div class="card h-100 border-warning">
-              <div class="card-body">
-                <h6 class="card-title text-warning">
-                  <i class="bi bi-clock-fill me-2"></i>Turno
+              <div class="card-body p-2">
+                <h6 class="card-title text-warning mb-2" style="font-size: 0.9rem;">
+                  <i class="bi bi-clock-fill me-1"></i>Turno
                 </h6>
-                <p class="card-text small mb-2">
-                  <strong>Aceita:</strong> <code>turno</code>, <code>shift</code>, <code>periodo</code> ou <code>período</code>
+                <p class="card-text mb-1" style="font-size: 0.75rem;">
+                  <strong>Aceita:</strong> <code style="font-size: 0.7rem;">turno</code> ou <code style="font-size: 0.7rem;">shift</code>
                 </p>
-                <p class="card-text small text-muted mb-0">
-                  Período ou turno de atendimento
+                <p class="card-text text-muted mb-0" style="font-size: 0.7rem;">
+                  Período de atendimento
                 </p>
-                <div class="mt-2 p-2 bg-light rounded">
-                  <small class="text-muted d-block"><strong>Exemplo:</strong></small>
-                  <small class="d-block">Turno 1</small>
-                  <small class="d-block">Turno 2</small>               
-                  <small class="d-block">Turno 3</small>               
-                  <small class="d-block">Turno Adm.</small>
+                <div class="mt-2 p-1 bg-light rounded">
+                  <small class="text-muted d-block" style="font-size: 0.65rem;"><strong>Exemplo:</strong></small>
+                  <small class="d-block" style="font-size: 0.65rem;">Turno 1</small>
+                  <small class="d-block" style="font-size: 0.65rem;">Turno 2</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Coluna Nível de Atendimento (Opcional) -->
+          <div class="col-md-3">
+            <div class="card h-100 border-secondary">
+              <div class="card-body p-2">
+                <h6 class="card-title text-secondary mb-2" style="font-size: 0.9rem;">
+                  <i class="bi bi-star-fill me-1"></i>Nível de Atendimento                 
+                </h6>
+                <p class="card-text mb-1" style="font-size: 0.75rem;">
+                  <strong>Aceita:</strong> <code style="font-size: 0.7rem;">nivelAtendimento</code>
+                </p>
+                <p class="card-text text-muted mb-0" style="font-size: 0.7rem;">
+                  Tipo de atendimento
+                </p>
+                <div class="mt-2 p-1 bg-light rounded">
+                  <small class="text-muted d-block" style="font-size: 0.65rem;"><strong>Exemplo:</strong></small>
+                  <small class="d-block" style="font-size: 0.65rem;">Atend. Pleno</small>
+                  <small class="d-block" style="font-size: 0.65rem;">Atend. Misto</small>
                 </div>
               </div>
             </div>
@@ -366,6 +394,7 @@
                   <th>nome</th>
                   <th>endereco</th>
                   <th>turno</th>
+                  <th>nivelAtendimento</th>
                 </tr>
               </thead>
               <tbody>
@@ -373,17 +402,19 @@
                   <td>João Silva</td>
                   <td>Rua das Flores, 123, Centro, Belo Horizonte</td>
                   <td>Turno 1</td>
+                  <td>Atend. Pleno</td>
                 </tr>
                 <tr>
                   <td>Maria Santos</td>
                   <td>Av. Brasil, 456, Savassi, Belo Horizonte</td>
-                  <td>Turno 2
-                  </td>
+                  <td>Turno 2</td>
+                  <td>Atend. Misto</td>
                 </tr>
                 <tr>
                   <td>Pedro Costa</td>
                   <td>Rua Paraíba, 789, Funcionários, BH</td>
                   <td>Turno 3</td>
+                  <td>Atend. Pleno</td>
                 </tr>
               </tbody>
             </table>
@@ -413,3 +444,118 @@
 
 <!-- Router Outlet para outras páginas (Meus Mapas e Calcular Rotas) -->
 <router-outlet />
+
+<!-- Modal de Confirmação - Firestore -->
+@if (showFirestoreModal()) {
+  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-warning text-dark">
+          <h5 class="modal-title">
+            <i class="bi bi-database-fill-add me-2"></i>Confirmar Salvamento no Firestore
+          </h5>
+          <button type="button" class="btn-close" (click)="closeFirestoreModal()"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-2">
+            Deseja salvar <strong>{{ pendingSaveData().count }}</strong> endereço(s) no Firestore?
+          </p>
+          <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong>Turnos que serão salvos:</strong>
+            <div class="mt-2">
+              @for (turno of pendingSaveData().turnos; track turno) {
+                <span class="badge bg-primary me-1">{{ turno }}</span>
+              }
+            </div>
+            <small class="d-block mt-2 text-muted">
+              Os dados serão organizados por turno em coleções separadas.
+            </small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeFirestoreModal()">
+            <i class="bi bi-x-circle me-2"></i>Cancelar
+          </button>
+          <button type="button" class="btn btn-warning" (click)="confirmSaveToFirestore()">
+            <i class="bi bi-database-fill-add me-2"></i>Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal de Confirmação - Storage (Todos) -->
+@if (showStorageModal()) {
+  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title">
+            <i class="bi bi-cloud-arrow-up-fill me-2"></i>Confirmar Salvamento no Storage
+          </h5>
+          <button type="button" class="btn-close btn-close-white" (click)="closeStorageModal()"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-2">
+            Deseja salvar <strong>{{ pendingSaveData().count }}</strong> endereço(s) no Firebase Storage?
+          </p>
+          <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle me-2"></i>
+            Será gerado <strong>1 arquivo CSV</strong> contendo todos os endereços geocodificados com sucesso.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeStorageModal()">
+            <i class="bi bi-x-circle me-2"></i>Cancelar
+          </button>
+          <button type="button" class="btn btn-success" (click)="confirmSaveToStorage()">
+            <i class="bi bi-cloud-arrow-up-fill me-2"></i>Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal de Confirmação - Storage por Turno -->
+@if (showStorageByShiftModal()) {
+  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">
+            <i class="bi bi-cloud-upload-fill me-2"></i>Confirmar Salvamento por Turno
+          </h5>
+          <button type="button" class="btn-close btn-close-white" (click)="closeStorageByShiftModal()"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-2">
+            Deseja salvar <strong>{{ pendingSaveData().count }}</strong> endereço(s) no Firebase Storage separados por turno?
+          </p>
+          <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong>Serão gerados {{ pendingSaveData().turnos?.length }} arquivo(s) CSV:</strong>
+            <div class="mt-2">
+              @for (turno of pendingSaveData().turnos; track turno) {
+                <span class="badge bg-primary me-1">{{ turno }}</span>
+              }
+            </div>
+            <small class="d-block mt-2 text-muted">
+              Cada turno será salvo em um arquivo separado.
+            </small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeStorageByShiftModal()">
+            <i class="bi bi-x-circle me-2"></i>Cancelar
+          </button>
+          <button type="button" class="btn btn-primary" (click)="confirmSaveToStorageByShift()">
+            <i class="bi bi-cloud-upload-fill me-2"></i>Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
