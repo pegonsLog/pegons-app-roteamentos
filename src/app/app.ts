@@ -28,7 +28,6 @@ export class App {
 
   // Modais de confirmação
   showFirestoreModal = signal(false);
-  showStorageModal = signal(false);
   showStorageByShiftModal = signal(false);
   pendingSaveData = signal<{count: number, turnos?: string[]}>({count: 0});
 
@@ -145,87 +144,6 @@ export class App {
     return formatted;
   }
 
-  /**
-   * Abre modal de confirmação para salvar no Storage
-   */
-  openStorageModal(): void {
-    const addresses = this.addresses();
-    
-    if (addresses.length === 0) {
-      this.errorMessage.set('Não há dados para salvar.');
-      return;
-    }
-
-    const successAddresses = addresses.filter(addr => addr.status === 'success');
-    
-    if (successAddresses.length === 0) {
-      this.errorMessage.set('Não há endereços geocodificados com sucesso para salvar.');
-      return;
-    }
-
-    this.pendingSaveData.set({count: successAddresses.length});
-    this.showStorageModal.set(true);
-  }
-
-  closeStorageModal(): void {
-    this.showStorageModal.set(false);
-  }
-
-  /**
-   * Salva todos os endereços geocodificados no Firebase Storage
-   */
-  async confirmSaveToStorage(): Promise<void> {
-    this.closeStorageModal();
-    const addresses = this.addresses();
-    const successAddresses = addresses.filter(addr => addr.status === 'success');
-
-    this.isLoading.set(true);
-    this.loadingMessage.set('☁️ Salvando no Firebase Storage...');
-    this.errorMessage.set('');
-
-    try {
-      // Prepara os dados para exportação
-      const exportData = successAddresses.map(addr => ({
-        'nome - endereco': `${addr.nome} - ${addr.endereco}`,
-        nome: addr.nome,
-        endereco: addr.endereco,
-        turno: addr.turno,
-        nivelAtendimento: addr.nivelAtendimento ?? 'N/A',
-        latitude: addr.latitude ?? 'N/A',
-        longitude: addr.longitude ?? 'N/A',
-        status: 'Sucesso'
-      }));
-
-      // Cria a planilha
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Endereços Geocodificados');
-
-      // Gera o arquivo CSV
-      const csvOutput = XLSX.write(workbook, { bookType: 'csv', type: 'string' });
-      
-      // Gera timestamp para nome do arquivo
-      const now = new Date();
-      const timestamp = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()}_${now.getHours().toString().padStart(2, '0')}h${now.getMinutes().toString().padStart(2, '0')}`;
-      const fileName = `enderecos_geocodificados_${timestamp}.csv`;
-      
-      // Converte CSV para File
-      const blob = new Blob([csvOutput], { type: 'text/csv' });
-      const csvFile = new File([blob], fileName, { type: 'text/csv' });
-      
-      // Upload para o Storage na pasta "enderecos_geocodificados"
-      await this.storageService.uploadFile(csvFile, 'enderecos_geocodificados');
-      
-      this.successMessage.set(`✅ Arquivo salvo no Firebase Storage com sucesso! (${successAddresses.length} endereços)`);
-      setTimeout(() => this.successMessage.set(''), 5000);
-    } catch (error: any) {
-      console.error('Erro ao salvar no Storage:', error);
-      this.errorMessage.set(`❌ Erro ao salvar no Storage: ${error.message || 'Erro desconhecido'}`);
-    } finally {
-      this.isLoading.set(false);
-      this.loadingMessage.set('');
-    }
-  }
 
   /**
    * Abre modal de confirmação para salvar no Storage por turno

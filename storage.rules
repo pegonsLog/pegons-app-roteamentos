@@ -1,0 +1,32 @@
+rules_version = '2';
+
+// Regras de segurança do Firebase Storage
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // DESENVOLVIMENTO: Permite acesso total a todos os arquivos e pastas
+    // ⚠️ ATENÇÃO: Para produção, use regras mais restritivas com autenticação
+    match /{allPaths=**} {
+      allow read, write: if true;
+    }
+    
+    // PRODUÇÃO (comentado): Descomente as regras abaixo para produção
+    /*
+    // Permite listar o caminho raiz (necessário para navegação)
+    match / {
+      allow read: if true;
+    }
+    
+    // Pasta de endereços geocodificados
+    match /enderecos_geocodificados/{allPaths=**} {
+      // Apenas usuários autenticados podem ler e escrever
+      allow read, write: if request.auth != null;
+    }
+    
+    // Bloqueia acesso a outras pastas por padrão
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+    */
+  }
+}

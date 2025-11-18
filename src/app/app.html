@@ -185,12 +185,6 @@
             <i class="bi bi-database-fill-add me-2"></i>Salvar no Firestore
           </button>
           <button 
-            class="btn btn-success" 
-            (click)="openStorageModal()"
-            [disabled]="isLoading()">
-            <i class="bi bi-cloud-arrow-up-fill me-2"></i>Salvar no Storage (Todos)
-          </button>
-          <button 
             class="btn btn-primary" 
             (click)="openStorageByShiftModal()"
             [disabled]="isLoading()">
@@ -494,38 +488,6 @@
   </div>
 }
 
-<!-- Modal de Confirmação - Storage (Todos) -->
-@if (showStorageModal()) {
-  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header bg-success text-white">
-          <h5 class="modal-title">
-            <i class="bi bi-cloud-arrow-up-fill me-2"></i>Confirmar Salvamento no Storage
-          </h5>
-          <button type="button" class="btn-close btn-close-white" (click)="closeStorageModal()"></button>
-        </div>
-        <div class="modal-body">
-          <p class="mb-2">
-            Deseja salvar <strong>{{ pendingSaveData().count }}</strong> endereço(s) no Firebase Storage?
-          </p>
-          <div class="alert alert-info mb-0">
-            <i class="bi bi-info-circle me-2"></i>
-            Será gerado <strong>1 arquivo CSV</strong> contendo todos os endereços geocodificados com sucesso.
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" (click)="closeStorageModal()">
-            <i class="bi bi-x-circle me-2"></i>Cancelar
-          </button>
-          <button type="button" class="btn btn-success" (click)="confirmSaveToStorage()">
-            <i class="bi bi-cloud-arrow-up-fill me-2"></i>Confirmar
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-}
 
 <!-- Modal de Confirmação - Storage por Turno -->
 @if (showStorageByShiftModal()) {
