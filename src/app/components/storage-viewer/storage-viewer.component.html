@@ -165,17 +165,19 @@
                   <td>{{ formatDate(file.timeCreated) }}</td>
                   <td>
                     <div class="btn-group btn-group-sm" role="group">
-                      <button 
-                        class="btn btn-outline-primary" 
-                        (click)="openFile(file)"
-                        title="Abrir">
-                        <i class="bi bi-eye"></i>
-                      </button>
+                   
                       <button 
                         class="btn btn-outline-success" 
                         (click)="downloadFile(file)"
                         title="Baixar">
                         <i class="bi bi-download"></i>
+                      </button>
+                      <button 
+                        class="btn btn-outline-info" 
+                        (click)="exportToGoogleDriveWithAccountSelection(file)"
+                        title="Exportar para Google Drive (trocar conta)"
+                        *ngIf="file.name.toLowerCase().endsWith('.csv')">
+                        <i class="bi bi-google"></i>
                       </button>
                       <button 
                         class="btn btn-outline-danger" 

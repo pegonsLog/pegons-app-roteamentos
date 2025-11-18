@@ -161,6 +161,39 @@ export class FirebaseStorageService {
   }
 
   /**
+   * Baixa um arquivo CSV com encoding correto para compatibilidade com Google My Maps
+   */
+  async downloadCsvForMyMaps(fullPath: string, fileName: string): Promise<Blob> {
+    try {
+      console.log('📥 Baixando CSV do Firebase Storage:', fullPath);
+      const storageRef = ref(this.storage, fullPath);
+      const blob = await getBlob(storageRef);
+      console.log('✅ Blob original recebido, tamanho:', blob.size, 'bytes');
+
+      // Lê o conteúdo do CSV
+      const text = await blob.text();
+      console.log('📝 Conteúdo lido, tamanho:', text.length, 'caracteres');
+      
+      // Adiciona BOM (Byte Order Mark) UTF-8 para garantir que o My Maps reconheça corretamente
+      // O BOM ajuda o Google My Maps a identificar o arquivo como UTF-8 válido
+      const BOM = '\uFEFF';
+      const csvWithBOM = BOM + text;
+      console.log('✨ BOM UTF-8 adicionado ao início do arquivo');
+      
+      // Cria um novo blob com encoding UTF-8 e BOM
+      const finalBlob = new Blob([csvWithBOM], { 
+        type: 'text/csv;charset=utf-8;'
+      });
+      console.log('✅ Blob final criado, tamanho:', finalBlob.size, 'bytes');
+      
+      return finalBlob;
+    } catch (error) {
+      console.error('❌ Erro ao baixar arquivo CSV:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Formata o tamanho do arquivo em formato legível
    */
   formatFileSize(bytes: number): string {

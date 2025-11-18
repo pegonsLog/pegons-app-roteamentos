@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FirebaseStorageService, StorageFile, StorageFolder } from '../../services/firebase-storage.service';
+import { GoogleDriveService } from '../../services/google-drive.service';
 
 @Component({
   selector: 'app-storage-viewer',
@@ -28,7 +29,10 @@ export class StorageViewerComponent implements OnInit {
   showDeleteFolderModal: boolean = false;
   folderToDelete: StorageFolder | null = null;
 
-  constructor(private storageService: FirebaseStorageService) {}
+  constructor(
+    private storageService: FirebaseStorageService,
+    private googleDriveService: GoogleDriveService
+  ) {}
 
   ngOnInit(): void {
     this.loadFiles();
@@ -178,14 +182,125 @@ export class StorageViewerComponent implements OnInit {
   /**
    * Faz download do arquivo
    */
-  downloadFile(file: StorageFile): void {
-    const link = document.createElement('a');
-    link.href = file.downloadURL;
-    link.download = file.name;
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  async downloadFile(file: StorageFile): Promise<void> {
+    console.log('🔽 Iniciando download do arquivo:', file.name);
+    
+    try {
+      // Para arquivos CSV, precisamos processar com BOM UTF-8
+      if (file.name.toLowerCase().endsWith('.csv')) {
+        console.log('📄 Arquivo CSV detectado, processando com BOM UTF-8...');
+        
+        // Baixa o arquivo via fetch usando a URL de download do Firebase
+        const response = await fetch(file.downloadURL);
+        if (!response.ok) {
+          throw new Error(`Erro ao baixar: ${response.status} ${response.statusText}`);
+        }
+        
+        const text = await response.text();
+        console.log('📝 Conteúdo CSV lido, tamanho:', text.length, 'caracteres');
+        
+        // Adiciona BOM UTF-8
+        const BOM = '\uFEFF';
+        const csvWithBOM = BOM + text;
+        
+        // Cria blob com BOM
+        const blob = new Blob([csvWithBOM], { type: 'text/csv;charset=utf-8;' });
+        console.log('✅ Blob CSV criado com BOM, tamanho:', blob.size, 'bytes');
+        
+        // Cria URL e faz download
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = file.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        this.successMessage = '✅ Arquivo CSV baixado com encoding UTF-8 + BOM para Google My Maps';
+        setTimeout(() => this.successMessage = '', 5000);
+      } else {
+        console.log('📁 Arquivo normal, baixando diretamente...');
+        
+        // Para outros arquivos, usa download direto
+        const link = document.createElement('a');
+        link.href = file.downloadURL;
+        link.download = file.name;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        this.successMessage = '✅ Arquivo baixado com sucesso';
+        setTimeout(() => this.successMessage = '', 3000);
+      }
+      
+      console.log('✅ Download concluído com sucesso!');
+    } catch (error: any) {
+      console.error('❌ Erro ao baixar arquivo:', error);
+      this.error = 'Erro ao baixar arquivo: ' + (error.message || 'Erro desconhecido');
+    }
+  }
+
+  /**
+   * Exporta arquivo CSV diretamente para o Google Drive
+   */
+  async exportToGoogleDrive(file: StorageFile, forceAccountSelection: boolean = false): Promise<void> {
+    console.log('📤 Iniciando exportação para Google Drive:', file.name);
+    this.loading = true;
+    this.error = '';
+    
+    try {
+      // Se forçar seleção de conta, limpa o token primeiro
+      if (forceAccountSelection) {
+        this.googleDriveService.clearToken();
+      }
+      
+      // Baixa o arquivo do Firebase Storage
+      const response = await fetch(file.downloadURL);
+      if (!response.ok) {
+        throw new Error(`Erro ao baixar: ${response.status} ${response.statusText}`);
+      }
+      
+      const text = await response.text();
+      
+      // Adiciona BOM UTF-8 para arquivos CSV
+      let content = text;
+      if (file.name.toLowerCase().endsWith('.csv')) {
+        const BOM = '\uFEFF';
+        content = BOM + text;
+      }
+      
+      // Faz upload para o Google Drive
+      console.log('☁️ Fazendo upload para Google Drive...');
+      const result = await this.googleDriveService.uploadFile(
+        file.name,
+        content,
+        'text/csv;charset=utf-8'
+      );
+      
+      console.log('✅ Arquivo exportado para Google Drive:', result);
+      this.successMessage = `✅ Arquivo "${file.name}" exportado para o Google Drive com sucesso!`;
+      setTimeout(() => this.successMessage = '', 5000);
+    } catch (error: any) {
+      console.error('❌ Erro ao exportar para Google Drive:', error);
+      
+      // Se o erro for de autenticação, sugere trocar de conta
+      if (error.message && error.message.includes('redirect_uri')) {
+        this.error = 'Erro de autenticação. Tente trocar de conta do Google.';
+      } else {
+        this.error = 'Erro ao exportar para Google Drive: ' + (error.message || 'Erro desconhecido');
+      }
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  /**
+   * Exporta para Google Drive com seleção de conta
+   */
+  async exportToGoogleDriveWithAccountSelection(file: StorageFile): Promise<void> {
+    await this.exportToGoogleDrive(file, true);
   }
 
   /**
